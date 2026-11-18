@@ -115,6 +115,22 @@ const ROUGHNESS: [RegExp, number][] = [
   [/Eyelash|EyeAO/i, 0.9],
   [/Body|Head/i, 0.62],
 ];
+// صورة وجه منظّفة: الأصلية فيها خطوط طولية من التصوير، واللحية ناقصة في الخد الأيمن.
+// نفس توزيع الصورة الأصلية (UV)، فتنركّب مكانها مباشرة بعد ما تنحمل
+function loadCleanFace(mat: THREE.MeshStandardMaterial, anisotropy: number) {
+  new THREE.TextureLoader().load("/avatar/head-albedo.jpg", (tex) => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = anisotropy;
+    if (mat.map) {
+      tex.flipY = mat.map.flipY;
+      tex.wrapS = mat.map.wrapS;
+      tex.wrapT = mat.map.wrapT;
+    }
+    mat.map = tex;
+    mat.needsUpdate = true;
+  });
+}
+
 function upgradeMaterial(
   m: THREE.MeshPhongMaterial,
   anisotropy: number,
@@ -138,6 +154,7 @@ function upgradeMaterial(
   });
   // الثوب الأبيض يحترق تحت الإضاءة القوية، فنخفف لونه شوي عشان تبان الطيات
   if (/look/i.test(m.name)) std.color.setScalar(0.86);
+  if (/^Head/i.test(m.name)) loadCleanFace(std, anisotropy);
   if (/Eyelash/i.test(m.name)) std.alphaTest = 0.25;
   if (/EyeAO/i.test(m.name)) std.depthWrite = false;
   return std;
@@ -167,6 +184,11 @@ function AvatarModel({ action: currentAction }: { action?: string }) {
   const paused = useRef(false);
   const speed = useRef(1);
   const brows = useRef<Record<string, number>>({});
+  // تعابير حيّة: انتباه لما يبدأ يأشّر، فرحة لما يخلص، نظرة عين ورمش طبيعي
+  const mood = useRef({ attention: 0, joy: 0, wasSpelling: false });
+  const gaze = useRef({ x: 0, y: 0, tx: 0, ty: 0, next: 1.5 });
+  const blinkAt = useRef({ start: -1, next: 2.5, double: false });
+  const head = useRef<{ bone: THREE.Object3D; base: THREE.Quaternion } | null>(null);
 
   const emitState = () => {
     const sp = spelling.current;
@@ -222,6 +244,8 @@ function AvatarModel({ action: currentAction }: { action?: string }) {
       applyRestPose(avatar);
       avatar.userData.restPoseApplied = true;
     }
+    const headBone = avatar.getObjectByName("Head");
+    head.current = headBone ? { bone: headBone, base: headBone.quaternion.clone() } : null;
     faces.current = [];
     avatar.traverse((o) => {
       const mesh = o as THREE.Mesh;
@@ -393,27 +417,100 @@ function AvatarModel({ action: currentAction }: { action?: string }) {
       }
       if (!spelling.current) emitState();
     }
-    // تعابير السؤال تظهر أثناء التهجئة فقط
+    const t = clock.elapsedTime;
+    const ease = (k: number) => Math.min(1, delta * k);
+
+    // المزاج: انتباه قصير أول ما يبدأ يأشّر، وابتسامة فرحة لما يخلص الجملة
+    const isSpelling = !!spelling.current;
+    const md = mood.current;
+    if (isSpelling && !md.wasSpelling) md.attention = 1;
+    if (!isSpelling && md.wasSpelling) md.joy = 1;
+    md.wasSpelling = isSpelling;
+    md.attention = Math.max(0, md.attention - delta * 1.1);
+    md.joy = Math.max(0, md.joy - delta * 0.55);
+    const joy = smooth(md.joy);
+    const attn = smooth(md.attention);
+
+    // الحواجب: تعابير السؤال لها الأولوية أثناء التهجئة، وإلا انتباه/فرحة خفيفة
     const want: Record<string, number> = spelling.current?.question
       ? BROWS[spelling.current.question]
-      : {};
+      : {
+          // رفع أطراف الحواجب = اهتمام وترحيب، ورفع الوسط يعطي شكل قلق فنخليه خفيف
+          browInnerUp: 0.08 * attn,
+          browOuterUpLeft: 0.38 * attn + 0.18 * joy,
+          browOuterUpRight: 0.38 * attn + 0.18 * joy,
+        };
     for (const k of BROW_KEYS) {
       const cur = brows.current[k] ?? 0;
-      brows.current[k] = cur + ((want[k] ?? 0) - cur) * Math.min(1, delta * 6);
+      brows.current[k] = cur + ((want[k] ?? 0) - cur) * ease(6);
     }
     // حركة تنفّس خفيفة وهو واقف عشان ما يبان جامد
-    const t = clock.elapsedTime;
     avatar.rotation.y = Math.sin(t * 0.6) * 0.05;
 
-    // الوجه: رمش طبيعي، ابتسامة خفيفة، وحركة الفم مع الصوت
-    const blinkPhase = t % 4.2;
-    const blink = blinkPhase < 0.15 ? Math.sin((blinkPhase / 0.15) * Math.PI) : 0;
+    // الرأس: إيماءة خفيفة مستمرة، وهزة "تمام" لما يخلص، وميلان اهتمام لما يبدأ
+    const h = head.current;
+    if (h && !action.current?.isRunning()) {
+      const nod = Math.sin(t * 0.9) * 0.018 + Math.sin(md.joy * Math.PI * 2) * 0.07 * md.joy;
+      const tilt = Math.sin(t * 0.47) * 0.025 + 0.06 * attn;
+      const turn = gaze.current.x * 0.12;
+      h.bone.quaternion
+        .copy(h.base)
+        .multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(nod, turn, tilt)));
+    }
+
+    // نظرة العين: أغلب الوقت للمستخدم، وأحيانًا حركة صغيرة طبيعية
+    const gz = gaze.current;
+    if (t > gz.next) {
+      const away = Math.random() < 0.35 && !isSpelling;
+      gz.tx = away ? (Math.random() - 0.5) * 0.5 : (Math.random() - 0.5) * 0.08;
+      gz.ty = away ? (Math.random() - 0.4) * 0.3 : (Math.random() - 0.5) * 0.06;
+      gz.next = t + (away ? 0.8 + Math.random() : 1.6 + Math.random() * 2.4);
+    }
+    gz.x += (gz.tx - gz.x) * ease(14);
+    gz.y += (gz.ty - gz.y) * ease(14);
+
+    // رمش بفترات عشوائية (أحيانًا رمشتين ورا بعض) بدل رمش كل 4 ثواني بالضبط
+    const bl = blinkAt.current;
+    if (t > bl.next && bl.start < 0) {
+      bl.start = t;
+      bl.double = Math.random() < 0.2;
+    }
+    let blink = 0;
+    if (bl.start >= 0) {
+      const dur = bl.double ? 0.42 : 0.16;
+      const u = (t - bl.start) / dur;
+      if (u >= 1) {
+        bl.start = -1;
+        bl.next = t + 2.2 + Math.random() * 3.6;
+      } else blink = Math.sin((bl.double ? (u * 2) % 1 : u) * Math.PI);
+    }
+
+    // الفم: ابتسامة ودودة دايمًا، تكبر مع الفرحة، وتخف وقت الكلام عشان الشفايف تتقرأ
     const talking = typeof window !== "undefined" && window.speechSynthesis?.speaking;
     const mouth = talking ? 0.18 + 0.22 * Math.abs(Math.sin(t * 11) * Math.sin(t * 4.3)) : 0;
+    const smile = (talking ? 0.4 : 0.68) + 0.3 * joy;
+    const gx = gz.x;
+    const gy = gz.y;
     const face: Record<string, number> = {
       eyeBlinkLeft: blink,
       eyeBlinkRight: blink,
-      mouthSmile: 0.18,
+      mouthSmileLeft: smile,
+      mouthSmileRight: smile,
+      mouthSmile: 0.3 + 0.35 * joy,
+      cheekSquintLeft: 0.3 + 0.3 * joy,
+      cheekSquintRight: 0.3 + 0.3 * joy,
+      eyeSquintLeft: 0.14 + 0.14 * joy - 0.1 * attn,
+      eyeSquintRight: 0.14 + 0.14 * joy - 0.1 * attn,
+      eyeWideLeft: 0.12 * attn,
+      eyeWideRight: 0.12 * attn,
+      eyeLookOutLeft: Math.max(0, gx),
+      eyeLookInRight: Math.max(0, gx),
+      eyeLookInLeft: Math.max(0, -gx),
+      eyeLookOutRight: Math.max(0, -gx),
+      eyeLookUpLeft: Math.max(0, gy),
+      eyeLookUpRight: Math.max(0, gy),
+      eyeLookDownLeft: Math.max(0, -gy),
+      eyeLookDownRight: Math.max(0, -gy),
       jawOpen: mouth,
       viseme_aa: mouth * 0.8,
       viseme_O: talking ? 0.25 * Math.abs(Math.sin(t * 6.1)) : 0,
