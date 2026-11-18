@@ -18,9 +18,9 @@ export function BrandMark({ size = 40, className = "" }: { size?: number; classN
   );
 }
 
-// الشعار الكامل: اليد + كلمة emaa (+ إيماء بالعربي)
+// الشعار الكامل: اليد + كلمة emaa وتحتها إيماء بخط أصغر
 export function BrandLogo({ compact = false }: { compact?: boolean }) {
-  const { lang, t } = useI18n();
+  const { t } = useI18n();
   return (
     <Link
       to="/home"
@@ -35,9 +35,11 @@ export function BrandLogo({ compact = false }: { compact?: boolean }) {
         />
       </span>
       {!compact && (
-        <span dir="ltr" className="flex items-baseline gap-2 leading-none">
-          <span className="wordmark text-[22px]">emaa</span>
-          {lang === "ar" && <span className="text-[13px] font-semibold text-white/55">إيماء</span>}
+        <span className="flex flex-col items-center leading-none">
+          <span dir="ltr" className="wordmark text-[22px]">
+            emaa
+          </span>
+          <span className="mt-0.5 text-[11px] font-semibold text-white/55">إيماء</span>
         </span>
       )}
     </Link>

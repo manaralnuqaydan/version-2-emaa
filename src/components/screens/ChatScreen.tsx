@@ -1,8 +1,8 @@
-import { Volume2, Pause, Download, Sparkles, X, AlertCircle, Send, RotateCcw } from "lucide-react";
+import { Volume2, Sparkles, X, AlertCircle, Send, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import AvatarViewer from "../ui/AvatarViewer";
 import SpellCaption from "../ui/SpellCaption";
-import { downloadText, speak, stopSpeaking } from "@/lib/speech";
+import { speak, stopSpeaking } from "@/lib/speech";
 import { translate, useI18n } from "@/lib/i18n";
 import { SignLanguagePicker } from "@/components/LanguageControls";
 import { AppShell } from "@/components/layout/AppShell";
@@ -118,34 +118,12 @@ export function ChatScreen() {
     stopSpeaking();
   };
 
-  const saveConversation = () => {
-    const lines = bubbles.map(
-      (b) => `${b.role === "user" ? t("assistant.you") : t("assistant.bot")}: ${b.text}`,
-    );
-    downloadText(`emaa-${new Date().toISOString().slice(0, 10)}.txt`, lines.join("\n"));
-  };
-
   const lastReply = [...bubbles].reverse().find((b) => b.reply)?.reply;
-  const sourceLabel = (r: AssistantReply) =>
-    r.source === "claude"
-      ? t("assistant.sourceAi")
-      : r.source === "dataset"
-        ? t("assistant.sourceDataset")
-        : t("assistant.sourceOffline");
-
   return (
     <AppShell
       fullHeight
       actions={
         <>
-          <div className="flex h-10 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3">
-            <span
-              className={`h-2 w-2 rounded-full ${isProactive ? "bg-amber-500" : "bg-emerald-400"}`}
-            />
-            <span className="text-[11px] font-semibold text-white/80">
-              {isProactive ? t("assistant.proactiveOn") : t("assistant.online")}
-            </span>
-          </div>
           <SignLanguagePicker compact dark />
         </>
       }
@@ -254,17 +232,14 @@ export function ChatScreen() {
                     </div>
                   )}
                   {b.reply && (
-                    <div className="mt-2 flex items-center gap-2 text-[10px] text-white/45">
-                      <span className="rounded-full bg-white/10 px-2 py-0.5">
-                        {sourceLabel(b.reply)}
-                      </span>
-                      <button
-                        onClick={() => playReply(b.reply!)}
-                        className="flex items-center gap-1 hover:text-white"
-                      >
-                        <Volume2 className="h-3 w-3" /> {t("assistant.playVoice")}
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => playReply(b.reply!)}
+                      aria-label={t("assistant.playVoice")}
+                      title={t("assistant.playVoice")}
+                      className="mt-2 grid h-7 w-7 place-items-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white"
+                    >
+                      <Volume2 className="h-3.5 w-3.5" />
+                    </button>
                   )}
                 </div>
               ),
@@ -313,36 +288,6 @@ export function ChatScreen() {
           </form>
           <p className="mt-1.5 text-center text-[10px] text-white/45">{t("privacy.chatNote")}</p>
         </div>
-      </div>
-
-      {/* أزرار الصوت */}
-      <div className="relative z-20 flex w-full shrink-0 items-center justify-center gap-4 px-5 pb-5 pt-1">
-        <button
-          onClick={() => lastReply && playReply(lastReply)}
-          disabled={!lastReply}
-          aria-label={t("common.listen")}
-          title={t("common.listen")}
-          className="grid h-12 w-12 place-items-center rounded-full border border-white/10 bg-white/[0.05] hover:bg-white/10 disabled:opacity-40"
-        >
-          <Volume2 className="h-5 w-5" />
-        </button>
-        <button
-          onClick={stopSpeaking}
-          aria-label={t("common.stop")}
-          title={t("common.stop")}
-          className="grid h-14 w-14 place-items-center rounded-full bg-white text-[oklch(0.3_0.15_292)] shadow-glow"
-        >
-          <Pause className="h-5 w-5 fill-current" />
-        </button>
-        <button
-          onClick={saveConversation}
-          disabled={!bubbles.length}
-          aria-label={t("common.save")}
-          title={t("common.save")}
-          className="grid h-12 w-12 place-items-center rounded-full border border-white/10 bg-white/[0.05] hover:bg-white/10 disabled:opacity-40"
-        >
-          <Download className="h-5 w-5" />
-        </button>
       </div>
     </AppShell>
   );

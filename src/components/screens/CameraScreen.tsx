@@ -692,12 +692,9 @@ export function CameraScreen() {
               </span>
               <span className="font-semibold">{statusLabel}</span>
             </div>
-            <div className="text-[12px] font-semibold text-white/60">{t("live.user")}</div>
+            <div className="text-[13px] font-bold text-white/80">{t("live.user")}</div>
           </div>
 
-          <div className="relative mt-2 text-[11px] font-semibold text-white/80">
-            {t("signLang.active", { name: signLangName })}
-          </div>
           {signLang === "arsl" && apiStatus?.arsl_phrases !== false && (
             <div
               role="radiogroup"
@@ -882,13 +879,33 @@ export function CameraScreen() {
                 <Sparkles className="h-3 w-3 text-primary" />
                 <span>{t("live.signText")}</span>
               </div>
-              <button
-                onClick={() => speak(signTranslation)}
-                disabled={!signTranslation.trim()}
-                className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[10px] hover:bg-white/20 disabled:opacity-40"
-              >
-                <Volume2 className="h-3 w-3" /> {t("common.listen")}
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={addSpace}
+                  aria-label={t("live.endWord")}
+                  title={t("live.endWord")}
+                  className="grid h-7 w-7 place-items-center rounded-full bg-white/10 hover:bg-white/20"
+                >
+                  <Space className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={deleteLetter}
+                  aria-label={t("live.deleteLetter")}
+                  title={t("live.deleteLetter")}
+                  className="grid h-7 w-7 place-items-center rounded-full bg-white/10 hover:bg-white/20"
+                >
+                  <Delete className="h-3.5 w-3.5 rtl:-scale-x-100" />
+                </button>
+                <button
+                  onClick={() => speak(signTranslation)}
+                  disabled={!signTranslation.trim()}
+                  aria-label={t("common.listen")}
+                  title={t("common.listen")}
+                  className="grid h-7 w-7 place-items-center rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-40"
+                >
+                  <Volume2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
             <div className="relative mt-2">
               <textarea
@@ -911,20 +928,6 @@ export function CameraScreen() {
                 <X className="h-3 w-3" />
               </button>
             </div>
-            <div className="mt-2 flex items-center gap-2">
-              <button
-                onClick={addSpace}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-white/10 py-2 text-[11px] font-semibold hover:bg-white/20"
-              >
-                <Space className="h-3.5 w-3.5" /> {t("live.endWord")}
-              </button>
-              <button
-                onClick={deleteLetter}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-white/10 py-2 text-[11px] font-semibold hover:bg-white/20"
-              >
-                <Delete className="h-3.5 w-3.5 rtl:-scale-x-100" /> {t("live.deleteLetter")}
-              </button>
-            </div>
             <button
               onClick={askFromSigns}
               disabled={!signTranslation.trim() || asking}
@@ -940,13 +943,13 @@ export function CameraScreen() {
         <div className="relative flex flex-col overflow-hidden rounded-[28px] surface lg:min-h-0 lg:flex-1">
           <div className="flex flex-1 flex-col p-4 sm:p-5 lg:min-h-0 lg:p-6">
             <div className="flex items-center justify-between">
-              <div
-                className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold backdrop-blur transition-all ${isProactive ? "bg-amber-500/20 text-amber-200" : "bg-primary/15 text-lavender"}`}
-              >
-                <Sparkles className="h-3 w-3" />
-                <span>{isProactive ? t("live.proactiveOn") : t("live.toSign")}</span>
-              </div>
-              <div className="text-[12px] font-semibold text-white/60">{t("live.partner")}</div>
+              <div className="text-[13px] font-bold text-white/80">{t("live.partner")}</div>
+              {isProactive && (
+                <div className="flex items-center gap-1.5 rounded-full bg-amber-500/20 px-2.5 py-1 text-[10px] font-semibold text-amber-200">
+                  <Sparkles className="h-3 w-3" />
+                  <span>{t("live.proactiveOn")}</span>
+                </div>
+              )}
             </div>
 
             <div

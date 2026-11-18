@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { Camera, Home, MessageCircle } from "lucide-react";
+import { Camera, Home, Type } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { BrandLogo } from "@/components/Brand";
 import { LanguageSwitcher } from "@/components/LanguageControls";
 
 const NAV = [
   { to: "/home", key: "nav.home", Icon: Home },
-  { to: "/chat", key: "nav.assistant", Icon: MessageCircle },
+  { to: "/chat", key: "nav.assistant", Icon: Type },
   { to: "/camera", key: "nav.live", Icon: Camera },
 ] as const;
 
