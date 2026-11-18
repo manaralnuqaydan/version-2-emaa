@@ -39,7 +39,7 @@ model/ArASL_Database_54K_Final/
 .venv/
 venv/
 
-# أسرار محلية (مفتاح Claude API)
+# ملفات إعدادات محلية
 .env
 model/.env
 model/results/*.keras

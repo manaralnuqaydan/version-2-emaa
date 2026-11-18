@@ -29,7 +29,6 @@
  },
  "asl_letters": "Not Measured (model not trained yet)",
  "asl_words": "Not Measured (model not trained yet)",
- "chatbot_claude": "Not Measured (depends on network and API; only a local mock was tested)",
  "browser_mediapipe": "Not Measured (runs on the user device)",
  "hardware": {
   "cpu": "x86_64",

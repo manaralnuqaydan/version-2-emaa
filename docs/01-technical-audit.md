@@ -1,5 +1,8 @@
 # EMAA – Phase 1: Technical Audit
 
+> **تحديث 2026-11-19:** شلنا مساعد Claude نهائيًا بطلب الفريق. emaa الحين يترجم من الداتاسيت والموديلات المحلية بس، وبدون صوت. الأسطر اللي تذكر Claude تحت تخص النسخة القديمة.
+
+
 Date: 2026-11-18 · Scope: `version-2/` on `main` (the original project at the repository root was also inspected for comparison and left untouched).
 
 Status labels used: **Implemented and tested** · **Implemented but not fully tested** · **Partially implemented** · **Not implemented** · **Not measured yet**.

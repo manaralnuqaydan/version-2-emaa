@@ -16,19 +16,19 @@ npm run dev
 ثم افتح `http://localhost:8080`.
 
 - `npm run dev` يشغّل الواجهة وخادم البايثون مع بعض. أول مرة يسوي بيئة بايثون في `model/.venv` ويثبت المكتبات لحاله (يأخذ دقائق مرة وحدة بس).
-- **مفتاح Claude للمساعد:** انسخ `model/.env.example` إلى `model/.env` واكتب المفتاح فيه. الملف ما ينرفع على GitHub. بدون المفتاح المساعد يرد بردود جاهزة بس.
+- كل شي يشتغل محليًا بدون إنترنت وبدون أي مفتاح API: الترجمة من الداتاسيت والموديلات المدربة بس.
 - `npm run dev:web` يشغّل الواجهة لحالها لو تبي.
 
 ## ترتيب الملفات
 
 ```
 src/                 الواجهة (React + TanStack + Vite)
-  routes/            الصفحات: /home  /modes  /chat (المساعد)  /camera (الكاميرا والأفاتار)
-  components/screens/  الشاشات (ChatScreen = المساعد، CameraScreen = الكاميرا)
+  routes/            الصفحات: /home  /modes  /chat (نص ← إشارة)  /camera (إشارة ← نص)
+  components/screens/  الشاشات (ChatScreen = نص ← إشارة، CameraScreen = إشارة ← نص)
   i18n/              نصوص العربي والإنجليزي
 public/              الأفاتار avatar.fbx وأشكال اليد
 model/               خادم البايثون (FastAPI)
-  api.py chatbot.py  الخادم والمساعد
+  api.py             الخادم
   model.onnx classes.json phrases_model.pkl   الموديلات المدربة
   tests/             اختبارات الخادم
   training/          سكربتات التدريب وتجهيز الداتا (ما يحتاجها التشغيل)

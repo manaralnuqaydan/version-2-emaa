@@ -1,10 +1,6 @@
 import {
-  Volume2,
-  VolumeX,
   Send,
   Sparkles,
-  Mic,
-  MicOff,
   RefreshCw,
   X,
   Camera,
@@ -17,12 +13,12 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import AvatarViewer from "@/components/ui/AvatarViewer";
 import SpellCaption from "@/components/ui/SpellCaption";
 import CameraConsent, { hasCameraConsent } from "@/components/ui/CameraConsent";
-import { speak, stopSpeaking, useSpeechToText } from "@/lib/speech";
 import { useI18n } from "@/lib/i18n";
 import { SignLanguagePicker } from "@/components/LanguageControls";
 import { AppShell } from "@/components/layout/AppShell";
 import type { SpellRequest } from "@/components/ui/AvatarViewer";
-import { askAssistant, spellOnAvatar, type ChatTurn } from "@/lib/assistant";
+import ProactiveAlert from "@/components/ui/ProactiveAlert";
+import { controlSpelling } from "@/lib/avatar";
 import {
   ARASL_LETTERS,
   MIN_CONFIDENCE,
@@ -89,7 +85,7 @@ type ApiStatus = {
 const PHRASE_MIN_CONFIDENCE = 80;
 
 export function CameraScreen() {
-  const { t, lang: uiLang, signLang } = useI18n();
+  const { t, signLang } = useI18n();
   const [signTranslation, setSignTranslation] = useState("");
   // null يعني الرد الافتراضي بلغة الواجهة الحالية
   const [replyText, setReplyText] = useState<string | null>(null);
@@ -102,7 +98,6 @@ export function CameraScreen() {
   const [confidence, setConfidence] = useState<number | null>(null);
   const [isProactive, setIsProactive] = useState<boolean>(false);
   const [proactiveReason, setProactiveReason] = useState<string>("");
-  const [autoSpeak, setAutoSpeak] = useState(true);
   // لغة الإشارة اللي يقرأها من الكاميرا: العربية (ArASL) أو الأمريكية (ASL)
   // تنختار من شاشة الأوضاع أو من الزر هنا، ومستقلة عن لغة الواجهة
   const lang = signLang === "asl" ? "en" : "ar";
@@ -111,11 +106,6 @@ export function CameraScreen() {
   const tRef = useRef(t);
   tRef.current = t;
   const [apiStatus, setApiStatus] = useState<ApiStatus>(null);
-  const [chatbotOnline, setChatbotOnline] = useState(false);
-  const chatbotOnlineRef = useRef(chatbotOnline);
-  chatbotOnlineRef.current = chatbotOnline;
-  const chatHistoryRef = useRef<ChatTurn[]>([]);
-  const [asking, setAsking] = useState(false);
   // في العربي: حروف (موديل ArASL) أو عبارات (موديل النسخة الأصلية)
   const [arslMode, setArslMode] = useState<"letters" | "phrases">("letters");
   const arslModeRef = useRef(arslMode);
@@ -143,15 +133,11 @@ export function CameraScreen() {
   const requestInFlight = useRef(false);
   const cropCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const repliesRef = useRef<Replies>({});
-  const autoSpeakRef = useRef(autoSpeak);
-  autoSpeakRef.current = autoSpeak;
   // الموديل يتعرف على حروف ArASL، فنجمعها هنا في كلمات
   const wordRef = useRef<string>("");
   const pendingLetterRef = useRef<string>("");
   const pendingCountRef = useRef(0);
   const committedLetterRef = useRef<string>("");
-
-  const mic = useSpeechToText((text) => setInputText(text), uiLang === "ar" ? "ar-SA" : "en-US");
 
   // نسأل الخادم وش الموديلات المتاحة فعلًا (مثلًا: هل موديل ASL متدرب؟)
   useEffect(() => {
@@ -159,7 +145,6 @@ export function CameraScreen() {
       .then((res) => res.json())
       .then((data) => {
         setApiStatus(data.models ?? null);
-        setChatbotOnline(!!data.chatbot);
       })
       .catch(() => setApiStatus(null));
   }, []);
@@ -233,7 +218,6 @@ export function CameraScreen() {
       setWordHint(null);
       const word = data.prediction.toLowerCase();
       setWord(wordRef.current + word + " ");
-      if (autoSpeakRef.current) speak(word);
       answer(wordRef.current);
     } catch (err) {
       setApiError(true);
@@ -255,13 +239,10 @@ export function CameraScreen() {
 
   const respond = (text: string) => {
     setReplyText(text);
-    if (autoSpeakRef.current) speak(text);
   };
 
-  // بدون اتصال بالشات بوت: رد جاهز من dataset.json (ميزة النسخة الأصلية)
-  // ومع الشات بوت: المستخدم يضغط "أرسل للمساعد" ويجيه رد حقيقي بدل الردود الجاهزة
+  // رد جاهز من dataset.json لما تطابق الجملة المترجمة عبارة معروفة (ميزة النسخة الأصلية)
   const answer = (text: string) => {
-    if (chatbotOnlineRef.current) return false;
     const replies = repliesRef.current;
     const key = Object.keys(replies)
       .sort((a, b) => b.length - a.length)
@@ -270,27 +251,6 @@ export function CameraScreen() {
     respond(replies[key].response);
     window.dispatchEvent(new CustomEvent("playAvatar"));
     return true;
-  };
-
-  // المسار A: الإشارة → نص → الشات بوت → رد بالنص والصوت والأفاتار
-  const askFromSigns = async () => {
-    const message = wordRef.current.trim();
-    if (!message || asking) return;
-    const history = [...chatHistoryRef.current, { role: "user" as const, content: message }];
-    setAsking(true);
-    try {
-      const reply = await askAssistant(history, uiLang, signLang);
-      chatHistoryRef.current = [...history, { role: "assistant", content: reply.ar || reply.en }];
-      const text = (uiLang === "ar" ? reply.ar : reply.en) || reply.ar || reply.en;
-      respond(text);
-      spellOnAvatar(reply.sign, signLang);
-      setWord("");
-      setApiError(false);
-    } catch {
-      setApiError(true);
-    } finally {
-      setAsking(false);
-    }
   };
 
   useEffect(() => {
@@ -352,7 +312,6 @@ export function CameraScreen() {
       isDetectingRef.current = false;
       streamRef.current?.getTracks().forEach((t) => t.stop());
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-      stopSpeaking();
     };
   }, []);
 
@@ -450,7 +409,6 @@ export function CameraScreen() {
     if (pendingCountRef.current < STABLE_READS + 1 || phrase === committedLetterRef.current) return;
     committedLetterRef.current = phrase;
     setWord(wordRef.current + phrase + " ");
-    if (autoSpeakRef.current) speak(phrase);
     answer(wordRef.current);
   };
 
@@ -510,7 +468,7 @@ export function CameraScreen() {
     if (conf < MIN_CONFIDENCE) {
       pendingCountRef.current = 0;
       retryCountRef.current += 1;
-      if (retryCountRef.current >= 8) triggerProactiveMode(tRef.current("live.lowConfidence"));
+      if (retryCountRef.current >= 8) triggerProactiveMode(tRef.current("alert.lowConfidence"));
       return;
     }
 
@@ -545,7 +503,6 @@ export function CameraScreen() {
     const word = chosen ?? correctWord(text.slice(start));
     setWord(text.slice(0, start) + word + " ");
     committedLetterRef.current = "";
-    if (autoSpeakRef.current) speak(word);
     answer(wordRef.current);
   };
 
@@ -571,7 +528,6 @@ export function CameraScreen() {
     clearTranslation();
     setReplyText(null);
     setInputText("");
-    stopSpeaking();
   };
 
   const checkProactiveContext = (text: string) => {
@@ -580,7 +536,7 @@ export function CameraScreen() {
     if (hasStrugglingWord) {
       retryCountRef.current += 1;
       if (retryCountRef.current >= 2) {
-        triggerProactiveMode(tRef.current("assistant.proactiveReason"));
+        triggerProactiveMode(tRef.current("alert.partnerStruggle"));
       } else {
         respond(tRef.current("live.struggleOnce"));
       }
@@ -607,7 +563,6 @@ export function CameraScreen() {
         detail: { text: userText, signLang },
       }),
     );
-    if (autoSpeakRef.current) speak(userText);
   };
 
   const partialWord = signTranslation.endsWith(" ") ? "" : (signTranslation.split(" ").pop() ?? "");
@@ -629,18 +584,6 @@ export function CameraScreen() {
         <>
           <SignLanguagePicker compact dark onChange={() => clearTranslation()} />
           <button
-            onClick={() => {
-              if (autoSpeak) stopSpeaking();
-              setAutoSpeak(!autoSpeak);
-            }}
-            aria-pressed={autoSpeak}
-            aria-label={autoSpeak ? t("live.autoSpeakOn") : t("live.autoSpeakOff")}
-            title={autoSpeak ? t("live.autoSpeakOn") : t("live.autoSpeakOff")}
-            className={`grid h-10 w-10 place-items-center rounded-full ${autoSpeak ? "grad-purple shadow-soft" : "border border-white/10 bg-white/[0.04] text-white/60"}`}
-          >
-            {autoSpeak ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-          </button>
-          <button
             onClick={resetAll}
             aria-label={t("common.newChat")}
             title={t("common.newChat")}
@@ -651,20 +594,25 @@ export function CameraScreen() {
         </>
       }
     >
-      {/* شريط مراقبة الـ Agent */}
+      {/* رصد استباقي: تنبيه مكتوب فقط */}
       {isProactive && (
-        <div className="mx-auto mt-3 flex w-[calc(100%-2rem)] max-w-[1400px] items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/15 p-3 text-xs text-amber-200 sm:w-[calc(100%-3rem)]">
-          <AlertCircle className="h-4 w-4 shrink-0 text-amber-400" />
-          <div className="flex-1 text-start">
-            <span className="font-bold">{t("assistant.proactiveTitle")}</span> {proactiveReason}
-          </div>
-          <button
-            onClick={() => setIsProactive(false)}
-            aria-label={t("common.hide")}
-            className="text-amber-200/70 hover:text-amber-100"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+        <div className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-[1400px] sm:w-[calc(100%-3rem)]">
+          <ProactiveAlert
+            message={proactiveReason}
+            action={
+              replyText
+                ? {
+                    label: t("alert.slower"),
+                    onClick: () => {
+                      controlSpelling({ cmd: "replay" });
+                      controlSpelling({ cmd: "speed", value: 0.5 });
+                      setIsProactive(false);
+                    },
+                  }
+                : undefined
+            }
+            onClose={() => setIsProactive(false)}
+          />
         </div>
       )}
 
@@ -896,15 +844,6 @@ export function CameraScreen() {
                 >
                   <Delete className="h-3.5 w-3.5 rtl:-scale-x-100" />
                 </button>
-                <button
-                  onClick={() => speak(signTranslation)}
-                  disabled={!signTranslation.trim()}
-                  aria-label={t("common.listen")}
-                  title={t("common.listen")}
-                  className="grid h-7 w-7 place-items-center rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-40"
-                >
-                  <Volume2 className="h-3.5 w-3.5" />
-                </button>
               </div>
             </div>
             <div className="relative mt-2">
@@ -928,14 +867,6 @@ export function CameraScreen() {
                 <X className="h-3 w-3" />
               </button>
             </div>
-            <button
-              onClick={askFromSigns}
-              disabled={!signTranslation.trim() || asking}
-              className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl grad-purple py-2 text-[12px] font-bold shadow-soft disabled:opacity-40"
-            >
-              <Send className="h-3.5 w-3.5 rtl:-scale-x-100" />
-              {asking ? t("live.asking") : t("live.askAssistant")}
-            </button>
           </div>
         </div>
 
@@ -978,13 +909,6 @@ export function CameraScreen() {
               />
               <div className="absolute end-2 top-2 flex gap-1">
                 <button
-                  onClick={() => speak(shownReply)}
-                  aria-label={t("common.listen")}
-                  className="grid h-6 w-6 place-items-center rounded-full bg-primary/20 text-lavender hover:bg-primary/30"
-                >
-                  <Volume2 className="h-3 w-3" />
-                </button>
-                <button
                   onClick={() => setReplyText("")}
                   aria-label={t("common.clear")}
                   className="grid h-6 w-6 place-items-center rounded-full bg-white/10 text-white/70 hover:bg-white/20"
@@ -995,21 +919,12 @@ export function CameraScreen() {
             </div>
 
             <div className="mt-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-black/25 p-1.5 transition-colors focus-within:border-primary/60">
-              {mic.supported && (
-                <button
-                  onClick={mic.toggle}
-                  aria-label={mic.listening ? t("live.micStop") : t("live.mic")}
-                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-full transition-all ${mic.listening ? "animate-pulse bg-rose-500 text-white" : "bg-white/[0.07] text-white/70 hover:bg-white/15"}`}
-                >
-                  {mic.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                </button>
-              )}
               <input
                 dir="auto"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleTextSend()}
-                placeholder={mic.listening ? t("live.speakNow") : t("live.typeToSign")}
+                placeholder={t("live.typeToSign")}
                 className="h-10 min-w-0 flex-1 bg-transparent px-1 text-[15px] text-white outline-none placeholder:text-white/40"
               />
               {inputText && (

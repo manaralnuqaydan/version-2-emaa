@@ -1,4 +1,4 @@
-"""اختبارات الـ API بدون اتصال بالإنترنت: المساعد مستبدل بدالة وهمية."""
+"""اختبارات الـ API بدون اتصال بالإنترنت."""
 import base64
 
 import cv2
@@ -7,7 +7,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 import api
-import chatbot
 
 client = TestClient(api.app)
 
@@ -57,43 +56,7 @@ def test_predict_asl_word_rejects_wrong_shape():
     assert body['prediction'] == '' and body['top'] == []
 
 
-def test_chat_requires_last_message_from_user():
-    assert client.post('/chat', json={'messages': []}).json()['source'] == 'empty'
-    msgs = [{'role': 'assistant', 'content': 'hi'}]
-    assert client.post('/chat', json={'messages': msgs}).json()['source'] == 'empty'
-
-
-def test_chat_passes_languages_to_chatbot(monkeypatch):
-    seen = {}
-
-    def fake(messages, ui_lang, sign_lang):
-        seen.update(messages=messages, ui_lang=ui_lang, sign_lang=sign_lang)
-        return {'ar': 'مرحبا', 'en': 'Hello', 'sign': 'HELLO', 'source': 'claude'}
-
-    monkeypatch.setattr(chatbot, 'reply', fake)
-    body = client.post('/chat', json={'messages': [{'role': 'user', 'content': 'hi'}],
-                                      'ui_lang': 'en', 'sign_lang': 'asl'}).json()
-    assert body['sign'] == 'HELLO'
-    assert seen['ui_lang'] == 'en' and seen['sign_lang'] == 'asl'
-
-
-def test_chat_rejects_unknown_sign_language():
-    r = client.post('/chat', json={'messages': [{'role': 'user', 'content': 'hi'}], 'sign_lang': 'bsl'})
-    assert r.status_code == 422  # لغات الإشارة المدعومة فقط: arsl و asl
-
-
-def test_offline_reply_is_labelled_and_never_mixes_languages(monkeypatch):
-    monkeypatch.setattr(chatbot, '_client', None)
-    key = next(iter(chatbot._replies), None)
-    if key:
-        ar = chatbot.reply([{'role': 'user', 'content': key}], 'ar', 'arsl')
-        assert ar['source'] == 'dataset' and ar['sign']
-        # الردود الجاهزة عربية، فما نعطيها للأفاتار لما تكون لغة الإشارة ASL
-        assert chatbot.reply([{'role': 'user', 'content': key}], 'en', 'asl')['sign'] == ''
-    none = chatbot.reply([{'role': 'user', 'content': 'zzzz-unknown'}], 'en', 'asl')
-    assert none['source'] == 'offline' and none['sign'] == ''
-
-
-def test_context_names_selected_sign_language():
-    assert 'American Sign Language' in chatbot._context('ar', 'asl')
-    assert 'Arabic Sign Language' in chatbot._context('en', 'arsl')
+def test_no_chatbot_endpoint():
+    # emaa يترجم من الداتاسيت والموديلات المحلية بس، بدون أي مساعد خارجي
+    assert client.post('/chat', json={'messages': []}).status_code in (404, 405)
+    assert 'chatbot' not in client.get('/').json()

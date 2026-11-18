@@ -2,7 +2,6 @@
 
     python latency.py            # 300 تكرار لكل قياس بعد 20 تكرار تسخين
 يقيس شيئين لكل موديل: الموديل وحده (forward)، والطلب كامل عبر الـ API (تحويل الصورة/JSON + الموديل).
-زمن المساعد (Claude) ما يُقاس هنا لأنه يعتمد على الشبكة؛ يُسجّل "Not Measured".
 """
 import base64
 import json
@@ -14,7 +13,6 @@ import time
 import cv2
 import numpy as np
 
-os.environ.pop('ANTHROPIC_API_KEY', None)
 from fastapi.testclient import TestClient  # noqa: E402
 
 import api  # noqa: E402
@@ -63,7 +61,6 @@ else:
 for name, net, path in [('asl_letters', api.asl_net, '/predict-asl'), ('asl_words', api.asl_words_net, '/predict-asl-word')]:
     results[name] = 'Not Measured (model not trained yet)' if net is None else 'run again after training'
 
-results['chatbot_claude'] = 'Not Measured (depends on network and API; only a local mock was tested)'
 results['browser_mediapipe'] = 'Not Measured (runs on the user device)'
 results['hardware'] = {'cpu': platform.processor() or platform.machine(), 'cores': os.cpu_count(),
                        'python': platform.python_version(), 'opencv': cv2.__version__,

@@ -49,34 +49,16 @@
     "subtitle": "Each mode is designed for a different way to communicate",
     "first": "Mode 1",
     "chatTitle": "Chat with the emaa assistant",
-    "chatDesc": "Type a message; the AI assistant replies in text and voice, and the avatar fingerspells the reply",
+    "chatDesc": "Type your sentence and the avatar signs it using the dataset",
     "start": "Start now",
     "second": "Mode 2",
-    "liveTitle": "Live sign to text and voice",
-    "liveDesc": "Fingerspell in front of the camera; the AI reads the letters and speaks them",
+    "liveTitle": "Instant sign to text",
+    "liveDesc": "Fingerspell in front of the camera and it turns into text instantly",
     "try": "Try it"
   },
   "assistant": {
-    "greeting": "Hello, I am emaa, your smart assistant. How can I help you today?",
-    "online": "AI assistant",
-    "offlineMode": "Offline mode",
-    "proactiveOn": "Help suggestion",
-    "proactiveTitle": "We noticed words that suggest difficulty:",
-    "proactiveReason": "Words like \"I don't understand\" or \"problem\" appeared repeatedly (keyword matching, not AI analysis).",
     "panelTitle": "Type, and the avatar signs it",
-    "panelGuide": "Guidance after detecting difficulty",
-    "live": "Live",
-    "typing": "emaa is typing...",
-    "placeholder": "Type your sentence here...",
-    "playVoice": "Play voice",
-    "serverDown": "The server is offline. Start api.py and try again.",
-    "you": "You",
-    "bot": "emaa",
-    "sourceAi": "AI reply (Claude)",
-    "sourceDataset": "Offline canned reply",
-    "sourceOffline": "Assistant offline",
-    "avatarSpells": "Avatar fingerspells: {words}",
-    "replaySign": "Replay fingerspelling"
+    "placeholder": "Type a sentence to turn into signs..."
   },
   "live": {
     "title": "Live conversation translation",
@@ -100,14 +82,8 @@
     "toSign": "Translating to sign",
     "proactiveOn": "Help suggestion",
     "liveSign": "Live signing",
-    "autoSpeakOn": "Auto-speak on",
-    "autoSpeakOff": "Auto-speak off",
-    "micStop": "Stop recording",
-    "mic": "Speak",
-    "speakNow": "Speak now...",
     "typeToSign": "Type to turn text into signs...",
     "noHandshape": "No handshape for this letter in {lang}; only the text is shown.",
-    "lowConfidence": "Confidence was low several times in a row. Try better lighting and bring your hand closer.",
     "struggleOnce": "I'm here to help. It looks like this step is a little hard. Please sign it again.",
     "struggleRepeat": "This step seems difficult. Try spelling the word slowly, or type it in the box.",
     "cameraDenied": "Could not start the camera. Allow camera access in your browser and try again.",
@@ -118,9 +94,7 @@
     "words": "Words",
     "hintAslWords": "Sign a whole ASL word, then lower your hands; the model reads the movement",
     "wordUnsure": "The model is not sure. Closest: {words}",
-    "loadingHolistic": "Loading body and hand tracker...",
-    "askAssistant": "Send to assistant",
-    "asking": "Assistant is replying..."
+    "loadingHolistic": "Loading body and hand tracker..."
   },
   "overview": {
     "splash": "emaa splash screen",
@@ -145,11 +119,9 @@
   "privacy": {
     "title": "Before the camera starts",
     "camera": "The camera runs in your browser. Only a cropped 64×64 hand image or hand landmarks are sent to the emaa server for recognition. Nothing is stored and no video is recorded.",
-    "assistant": "If you send to the assistant, only the text goes to Claude by Anthropic so it can reply.",
     "limits": "Translation is automatic and can be wrong. Do not rely on it for medical, legal or emergency situations; use a certified sign-language interpreter.",
     "agree": "Agree and start camera",
-    "cancel": "Cancel",
-    "chatNote": "Your messages are sent to Claude by Anthropic to generate replies. Do not share sensitive information."
+    "cancel": "Cancel"
   },
   "nav": {
     "label": "Navigation",
@@ -158,32 +130,26 @@
     "live": "Sign → Text"
   },
   "home2": {
-    "eyebrow": "Arabic Sign Language & ASL · AI",
     "title1": "Communication",
     "title2": "without limits",
     "lead": "Instant translation between sign language and text, in Arabic and English.",
-    "ctaLive": "Start live translation",
-    "ctaChat": "Talk to the assistant",
-    "modes": "Choose a mode",
-    "f1t": "Sign to text",
-    "f1d": "The camera reads sign language letters, builds words and speaks them.",
-    "f2t": "Fingerspelling avatar",
-    "f2d": "A 3D Saudi avatar spells the reply letter by letter, with a hand close-up.",
-    "f3t": "Bilingual AI assistant",
-    "f3d": "Replies in Arabic and English with short sentences the avatar can sign.",
-    "open": "Open",
-    "online": "Server connected",
-    "onlineAi": "Server and AI assistant ready",
-    "noKey": "Server connected · assistant has no Claude key",
-    "offline": "Server offline",
-    "checking": "Checking the server…",
-    "disclaimer": "emaa is a communication aid for everyday use, not a replacement for a certified sign language interpreter.",
     "signHint": "Sign language",
-    "visualA": "Sign → Text",
-    "visualB": "Text → Sign",
     "goSignT": "Text → Sign",
     "goSignD": "Type, and the avatar signs it",
     "goTextT": "Sign → Text",
-    "goTextD": "Sign to the camera and get text and voice"
+    "goTextD": "Sign to the camera and see it as text"
+  },
+  "t2s": {
+    "empty": "Type any sentence and the avatar signs it using the dataset.",
+    "replay": "Replay signing"
+  },
+  "alert": {
+    "struggle": "Looks like something wasn't clear. Want the avatar to repeat it slower?",
+    "slower": "Replay slower",
+    "wrongLangAr": "This text is in Arabic but ASL is selected. Switch to Arabic sign language?",
+    "wrongLangEn": "This text is in English but Arabic sign language is selected. Switch to ASL?",
+    "switch": "Switch",
+    "lowConfidence": "The model isn't sure about the sign. Move your hand closer to the camera and use better lighting.",
+    "partnerStruggle": "Looks like something is hard to understand. Want the avatar to repeat the reply slowly?"
   }
 }

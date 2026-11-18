@@ -1,5 +1,8 @@
 # EMAA – Phase 8: Final Documentation
 
+> **تحديث 2026-11-19:** شلنا مساعد Claude نهائيًا بطلب الفريق. emaa الحين يترجم من الداتاسيت والموديلات المحلية بس، وبدون صوت. الأسطر اللي تذكر Claude تحت تخص النسخة القديمة.
+
+
 Date: 2026-11-18. Paths are relative to the repository root (the standalone `version-2-emaa` repo).
 
 ## 1. Where each required document lives
@@ -15,7 +18,7 @@ Date: 2026-11-18. Paths are relative to the repository root (the standalone `ver
 | 7 | Arabic model | `model/README.md` |
 | 8 | Bilingual implementation | `docs/03-bilingual-interface.md` |
 | 9 | Language coverage matrix | `docs/07-testing-privacy-evaluation.md` §2 |
-| 10 | Chatbot workflow | `docs/05-chatbot-workflows.md` |
+| 10 | Chatbot workflow | removed on 2026-11-19 (no external assistant) |
 | 11 | Avatar rigging and animation | `docs/06-avatar.md` |
 | 12 | Avatar evaluation | `docs/06-avatar.md` (known limits) and `07` §4 |
 | 13 | Recognition accuracy | `docs/07-testing-privacy-evaluation.md` §4 |

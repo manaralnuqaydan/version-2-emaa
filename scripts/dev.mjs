@@ -60,12 +60,6 @@ function start(name, cmd, args, cwd) {
   return child;
 }
 
-if (!existsSync(join(modelDir, ".env"))) {
-  log(
-    "ما فيه model/.env: المساعد بيرد بردود جاهزة بس. انسخوا model/.env.example إلى model/.env وحطوا مفتاح Claude فيه.",
-  );
-}
-
 if (ensurePython()) {
   log(`الخادم على http://localhost:${API_PORT}`);
   start("الخادم", py, ["-m", "uvicorn", "api:app", "--port", API_PORT], modelDir);

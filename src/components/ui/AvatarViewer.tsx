@@ -485,10 +485,8 @@ function AvatarModel({ action: currentAction }: { action?: string }) {
       } else blink = Math.sin((bl.double ? (u * 2) % 1 : u) * Math.PI);
     }
 
-    // الفم: ابتسامة ودودة دايمًا، تكبر مع الفرحة، وتخف وقت الكلام عشان الشفايف تتقرأ
-    const talking = typeof window !== "undefined" && window.speechSynthesis?.speaking;
-    const mouth = talking ? 0.18 + 0.22 * Math.abs(Math.sin(t * 11) * Math.sin(t * 4.3)) : 0;
-    const smile = (talking ? 0.4 : 0.68) + 0.3 * joy;
+    // الفم: ابتسامة ودودة دايمًا، وتكبر مع الفرحة لما يخلص الجملة
+    const smile = 0.68 + 0.3 * joy;
     const gx = gz.x;
     const gy = gz.y;
     const face: Record<string, number> = {
@@ -511,9 +509,7 @@ function AvatarModel({ action: currentAction }: { action?: string }) {
       eyeLookUpRight: Math.max(0, gy),
       eyeLookDownLeft: Math.max(0, -gy),
       eyeLookDownRight: Math.max(0, -gy),
-      jawOpen: mouth,
-      viseme_aa: mouth * 0.8,
-      viseme_O: talking ? 0.25 * Math.abs(Math.sin(t * 6.1)) : 0,
+      jawOpen: 0,
       ...brows.current,
     };
     for (const mesh of faces.current) {

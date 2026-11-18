@@ -1,7 +1,6 @@
 import base64
 import json
 import os
-from typing import Literal
 
 import cv2
 import numpy as np
@@ -12,7 +11,6 @@ from pydantic import BaseModel
 # الملفات تنقرأ بمسارات نسبية، فنشتغل دايمًا من مجلد model مهما كان مكان التشغيل
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-import chatbot
 from labels import IMG_SIZE
 
 app = FastAPI()
@@ -100,25 +98,6 @@ def predict_asl(data: LandmarksInput):
     return {"prediction": asl_classes[best], "confidence": float(probabilities[best]) * 100}
 
 
-class ChatMessage(BaseModel):
-    role: Literal["user", "assistant"]
-    content: str
-
-
-class ChatInput(BaseModel):
-    messages: list[ChatMessage]
-    ui_lang: Literal["ar", "en"] = "ar"
-    sign_lang: Literal["arsl", "asl"] = "arsl"
-
-
-@app.post("/chat")
-def chat(data: ChatInput):
-    # يرجع: {"ar": ..., "en": ..., "sign": كلمات يتهجاها الأفاتار, "source": claude|dataset|offline}
-    if not data.messages or data.messages[-1].role != "user":
-        return {"ar": "", "en": "", "sign": "", "source": "empty"}
-    return chatbot.reply([m.model_dump() for m in data.messages], data.ui_lang, data.sign_lang)
-
-
 class PhraseInput(BaseModel):
     landmarks: list[list[float]]  # 21 نقطة (x, y, z) بإحداثيات الصورة من MediaPipe
 
@@ -161,5 +140,4 @@ def root():
         "status": "EEMAA API running ✅",
         "models": {"arsl_letters": True, "arsl_phrases": phrase_model is not None,
                    "asl_letters": asl_net is not None, "asl_words": asl_words_net is not None},
-        "chatbot": chatbot._client is not None,
     }
