@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Emaa — Communication without limits"
+    "title": "emaa · إيماء"
   },
   "common": {
     "back": "Back",
@@ -48,7 +48,7 @@
     "title": "Choose a mode",
     "subtitle": "Each mode is designed for a different way to communicate",
     "first": "Mode 1",
-    "chatTitle": "Chat with the Emaa assistant",
+    "chatTitle": "Chat with the emaa assistant",
     "chatDesc": "Type a message; the AI assistant replies in text and voice, and the avatar fingerspells the reply",
     "start": "Start now",
     "second": "Mode 2",
@@ -57,21 +57,21 @@
     "try": "Try it"
   },
   "assistant": {
-    "greeting": "Hello, I am Emaa, your smart assistant. How can I help you today?",
+    "greeting": "Hello, I am emaa, your smart assistant. How can I help you today?",
     "online": "AI assistant",
     "offlineMode": "Offline mode",
     "proactiveOn": "Help suggestion",
     "proactiveTitle": "We noticed words that suggest difficulty:",
     "proactiveReason": "Words like \"I don't understand\" or \"problem\" appeared repeatedly (keyword matching, not AI analysis).",
-    "panelTitle": "Emaa interactive assistant",
+    "panelTitle": "emaa assistant",
     "panelGuide": "Guidance after detecting difficulty",
     "live": "Live",
-    "typing": "Emaa is typing...",
+    "typing": "emaa is typing...",
     "placeholder": "Type a message to the assistant...",
     "playVoice": "Play voice",
     "serverDown": "The server is offline. Start api.py and try again.",
     "you": "You",
-    "bot": "Emaa",
+    "bot": "emaa",
     "sourceAi": "AI reply (Claude)",
     "sourceDataset": "Offline canned reply",
     "sourceOffline": "Assistant offline",
@@ -123,7 +123,7 @@
     "asking": "Assistant is replying..."
   },
   "overview": {
-    "splash": "Emaa splash screen",
+    "splash": "emaa splash screen",
     "home": "Home screen",
     "mode": "Choose a mode",
     "camera": "Live camera translation",
@@ -139,15 +139,47 @@
     "noShapes": "No {lang} handshapes yet, so the word is shown as text only",
     "whQuestion": "Wh-question: brows lowered",
     "yesnoQuestion": "Yes/no question: brows raised",
-    "animationNote": "Procedural fingerspelling (not motion capture of a Deaf signer)"
+    "animationNote": "Procedural fingerspelling (not motion capture of a Deaf signer)",
+    "handView": "Hand close-up"
   },
   "privacy": {
     "title": "Before the camera starts",
-    "camera": "The camera runs in your browser. Only a cropped 64×64 hand image or hand landmarks are sent to the Emaa server for recognition. Nothing is stored and no video is recorded.",
+    "camera": "The camera runs in your browser. Only a cropped 64×64 hand image or hand landmarks are sent to the emaa server for recognition. Nothing is stored and no video is recorded.",
     "assistant": "If you send to the assistant, only the text goes to Claude by Anthropic so it can reply.",
     "limits": "Translation is automatic and can be wrong. Do not rely on it for medical, legal or emergency situations; use a certified sign-language interpreter.",
     "agree": "Agree and start camera",
     "cancel": "Cancel",
     "chatNote": "Your messages are sent to Claude by Anthropic to generate replies. Do not share sensitive information."
+  },
+  "nav": {
+    "label": "Navigation",
+    "home": "Home",
+    "assistant": "Assistant",
+    "live": "Live translate"
+  },
+  "home2": {
+    "eyebrow": "Arabic Sign Language & ASL · AI",
+    "title1": "Communication",
+    "title2": "without limits",
+    "lead": "emaa turns your signs into text and voice straight from the camera, answers with a 3D Saudi avatar that fingerspells with its hand, and includes an AI assistant that understands Arabic and English.",
+    "ctaLive": "Start live translation",
+    "ctaChat": "Talk to the assistant",
+    "modes": "Choose a mode",
+    "f1t": "Sign to text",
+    "f1d": "The camera reads sign language letters, builds words and speaks them.",
+    "f2t": "Fingerspelling avatar",
+    "f2d": "A 3D Saudi avatar spells the reply letter by letter, with a hand close-up.",
+    "f3t": "Bilingual AI assistant",
+    "f3d": "Replies in Arabic and English with short sentences the avatar can sign.",
+    "open": "Open",
+    "online": "Server connected",
+    "onlineAi": "Server and AI assistant ready",
+    "noKey": "Server connected · assistant has no Claude key",
+    "offline": "Server offline",
+    "checking": "Checking the server…",
+    "disclaimer": "emaa is a communication aid for everyday use, not a replacement for a certified sign language interpreter.",
+    "signHint": "Sign language",
+    "visualA": "Sign → Text",
+    "visualB": "Text → Sign"
   }
 }

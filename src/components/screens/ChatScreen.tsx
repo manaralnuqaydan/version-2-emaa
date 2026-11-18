@@ -1,29 +1,12 @@
-import {
-  Volume2,
-  Pause,
-  ChevronRight,
-  Sparkles,
-  X,
-  AlertCircle,
-  Send,
-  RotateCcw,
-} from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Volume2, Pause, Download, Sparkles, X, AlertCircle, Send, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import AvatarViewer from "../ui/AvatarViewer";
 import SpellCaption from "../ui/SpellCaption";
 import { downloadText, speak, stopSpeaking } from "@/lib/speech";
 import { translate, useI18n } from "@/lib/i18n";
-import {
-  LanguageSwitcher,
-  SignLanguagePicker,
-} from "@/components/LanguageControls";
-import {
-  askAssistant,
-  spellOnAvatar,
-  type AssistantReply,
-  type ChatTurn,
-} from "@/lib/assistant";
+import { SignLanguagePicker } from "@/components/LanguageControls";
+import { AppShell } from "@/components/layout/AppShell";
+import { askAssistant, spellOnAvatar, type AssistantReply, type ChatTurn } from "@/lib/assistant";
 
 type Bubble = {
   role: "user" | "assistant";
@@ -78,8 +61,7 @@ export function ChatScreen() {
   const historyRef = useRef<ChatTurn[]>([]);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const textOf = (r: AssistantReply) =>
-    (lang === "ar" ? r.ar : r.en) || r.ar || r.en;
+  const textOf = (r: AssistantReply) => (lang === "ar" ? r.ar : r.en) || r.ar || r.en;
 
   useEffect(() => {
     return () => stopSpeaking();
@@ -107,23 +89,14 @@ export function ChatScreen() {
       retryCountRef.current += 1;
       if (retryCountRef.current >= 2) setIsProactive(true);
     }
-    const history = [
-      ...historyRef.current,
-      { role: "user" as const, content: message },
-    ];
+    const history = [...historyRef.current, { role: "user" as const, content: message }];
     historyRef.current = history;
     setBubbles((b) => [...b, { role: "user", text: message }]);
     setThinking(true);
     try {
       const reply = await askAssistant(history, lang, signLang);
-      historyRef.current = [
-        ...history,
-        { role: "assistant", content: reply.ar || reply.en },
-      ];
-      setBubbles((b) => [
-        ...b,
-        { role: "assistant", text: textOf(reply), reply },
-      ]);
+      historyRef.current = [...history, { role: "assistant", content: reply.ar || reply.en }];
+      setBubbles((b) => [...b, { role: "assistant", text: textOf(reply), reply }]);
       playReply(reply);
     } catch {
       // نرجع الرسالة للخانة عشان المستخدم يعيد الإرسال بدون ما يكتبها من جديد
@@ -147,13 +120,9 @@ export function ChatScreen() {
 
   const saveConversation = () => {
     const lines = bubbles.map(
-      (b) =>
-        `${b.role === "user" ? t("assistant.you") : t("assistant.bot")}: ${b.text}`,
+      (b) => `${b.role === "user" ? t("assistant.you") : t("assistant.bot")}: ${b.text}`,
     );
-    downloadText(
-      `emaa-${new Date().toISOString().slice(0, 10)}.txt`,
-      lines.join("\n"),
-    );
+    downloadText(`emaa-${new Date().toISOString().slice(0, 10)}.txt`, lines.join("\n"));
   };
 
   const lastReply = [...bubbles].reverse().find((b) => b.reply)?.reply;
@@ -165,35 +134,22 @@ export function ChatScreen() {
         : t("assistant.sourceOffline");
 
   return (
-    <div
-      className="flex min-h-dvh w-full flex-col text-white md:h-dvh md:overflow-hidden"
-      style={{
-        background: "linear-gradient(170deg, #1a1230 0%, #0a0617 100%)",
-      }}
-    >
-      {/* header */}
-      <div className="relative z-20 flex w-full shrink-0 flex-wrap items-center justify-between gap-2 px-5 pt-6 pb-4 md:pt-8">
-        <Link
-          to="/modes"
-          aria-label={t("common.back")}
-          className="grid h-10 w-10 place-items-center rounded-full glass-dark"
-        >
-          <ChevronRight className="h-4 w-4 ltr:-scale-x-100" />
-        </Link>
-        <div className="flex items-center gap-1.5 rounded-full glass-dark px-3 py-1.5">
-          <span
-            className={`h-2 w-2 rounded-full ${isProactive ? "bg-amber-500" : "bg-green-500"}`}
-          />
-          <span className="text-[10px] font-semibold">
-            {isProactive ? t("assistant.proactiveOn") : t("assistant.online")}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
+    <AppShell
+      fullHeight
+      actions={
+        <>
+          <div className="flex h-10 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3">
+            <span
+              className={`h-2 w-2 rounded-full ${isProactive ? "bg-amber-500" : "bg-emerald-400"}`}
+            />
+            <span className="text-[11px] font-semibold text-white/80">
+              {isProactive ? t("assistant.proactiveOn") : t("assistant.online")}
+            </span>
+          </div>
           <SignLanguagePicker compact dark />
-          <LanguageSwitcher dark />
-        </div>
-      </div>
-
+        </>
+      }
+    >
       {isProactive && (
         <div className="mx-5 mb-2 flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/20 p-3 text-xs text-amber-200">
           <AlertCircle className="h-4 w-4 shrink-0 text-amber-400" />
@@ -211,20 +167,20 @@ export function ChatScreen() {
         </div>
       )}
 
-      <div className="relative z-10 flex flex-1 flex-col gap-4 px-4 pb-4 sm:px-5 md:min-h-0 md:flex-row md:items-stretch md:gap-6 md:pb-5">
+      <div className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-4 pt-4 pb-4 sm:px-6 lg:min-h-0 lg:flex-row lg:items-stretch lg:gap-5 lg:pt-5">
         {/* الأفاتار */}
-        <div className="relative flex min-h-[340px] flex-1 flex-col overflow-hidden rounded-3xl glass-dark md:min-h-0">
+        <div className="relative flex min-h-[340px] flex-col overflow-hidden rounded-[28px] surface lg:min-h-0 lg:flex-[1.1]">
           <div
             className="absolute inset-0"
             style={{
               background:
-                "radial-gradient(ellipse at center top, oklch(0.5 0.22 295 / 0.55), transparent 70%)",
+                "radial-gradient(70% 60% at 50% 18%, oklch(0.5 0.2 295 / 0.5), transparent 70%), linear-gradient(180deg, oklch(0.2 0.06 290 / 0.3), oklch(0.1 0.03 288 / 0.6))",
             }}
           />
-          <div className="absolute end-3 top-3 z-10 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-semibold">
+          <div className="absolute right-3 top-3 z-10 rounded-full border border-white/10 bg-black/30 px-2.5 py-1 text-[11px] font-semibold backdrop-blur">
             {t(`signLang.${signLang}`)}
           </div>
-          <div className="relative h-[26rem] w-full md:h-full md:flex-1">
+          <div className="relative h-[min(68vh,30rem)] w-full sm:h-[32rem] lg:h-full lg:flex-1">
             <AvatarViewer />
           </div>
           <SpellCaption
@@ -232,9 +188,7 @@ export function ChatScreen() {
             idle={
               lastReply?.sign && (
                 <div className="absolute inset-x-3 bottom-3 flex items-center justify-between gap-2 rounded-2xl bg-black/40 px-3 py-2 text-[11px] text-white/80 backdrop-blur">
-                  <span>
-                    {t("assistant.avatarSpells", { words: lastReply.sign })}
-                  </span>
+                  <span>{t("assistant.avatarSpells", { words: lastReply.sign })}</span>
                   <button
                     onClick={() => spellOnAvatar(lastReply.sign, signLang)}
                     aria-label={t("assistant.replaySign")}
@@ -249,27 +203,31 @@ export function ChatScreen() {
         </div>
 
         {/* المحادثة */}
-        <div className="relative flex min-h-[420px] flex-1 flex-col overflow-hidden rounded-3xl glass-dark p-4 shadow-card md:min-h-0 md:p-6">
+        <div className="relative flex min-h-[460px] flex-col overflow-hidden rounded-[28px] surface p-4 sm:p-5 lg:min-h-0 lg:flex-1 lg:p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-[10px] text-white/60">
-              <Sparkles className="h-3 w-3 text-primary" />
-              <span>{t("assistant.panelTitle")}</span>
+            <div className="flex items-center gap-2.5">
+              <span className="grid h-9 w-9 place-items-center rounded-xl grad-purple shadow-soft">
+                <Sparkles className="h-4 w-4 text-white" />
+              </span>
+              <span className="text-[14px] font-bold">{t("assistant.panelTitle")}</span>
             </div>
-            <button
-              onClick={resetChat}
-              className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] hover:bg-white/20"
-            >
-              {t("common.newChat")}
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={resetChat}
+                className="h-8 rounded-full bg-white/[0.07] px-3 text-[11px] font-semibold hover:bg-white/15"
+              >
+                {t("common.newChat")}
+              </button>
+            </div>
           </div>
 
           <div
             ref={listRef}
             aria-live="polite"
-            className="mt-3 flex flex-1 flex-col gap-2.5 overflow-y-auto pe-1"
+            className="mt-4 flex min-h-[200px] flex-1 flex-col gap-3 overflow-y-auto pe-1"
           >
             {bubbles.length === 0 && (
-              <div className="max-w-[85%] self-start rounded-2xl rounded-ss-sm bg-white/10 px-4 py-3 text-base font-semibold leading-relaxed">
+              <div className="max-w-[85%] self-start rounded-2xl rounded-ss-md border border-white/[0.06] bg-white/[0.07] px-4 py-3 text-base font-semibold leading-relaxed">
                 {translate(lang, "assistant.greeting")}
               </div>
             )}
@@ -278,19 +236,16 @@ export function ChatScreen() {
                 <div
                   key={i}
                   dir="auto"
-                  className="max-w-[85%] self-end rounded-2xl rounded-se-sm grad-purple px-4 py-2.5 text-sm"
+                  className="max-w-[85%] self-end rounded-2xl rounded-se-md grad-purple px-4 py-2.5 text-[15px] shadow-soft"
                 >
                   {b.text}
                 </div>
               ) : (
                 <div
                   key={i}
-                  className="max-w-[85%] self-start rounded-2xl rounded-ss-sm bg-white/10 px-4 py-3"
+                  className="max-w-[85%] self-start rounded-2xl rounded-ss-md border border-white/[0.06] bg-white/[0.07] px-4 py-3"
                 >
-                  <div
-                    dir="auto"
-                    className="text-base font-semibold leading-relaxed"
-                  >
+                  <div dir="auto" className="text-base font-semibold leading-relaxed">
                     {b.text}
                   </div>
                   {b.reply && (lang === "ar" ? b.reply.en : b.reply.ar) && (
@@ -307,8 +262,7 @@ export function ChatScreen() {
                         onClick={() => playReply(b.reply!)}
                         className="flex items-center gap-1 hover:text-white"
                       >
-                        <Volume2 className="h-3 w-3" />{" "}
-                        {t("assistant.playVoice")}
+                        <Volume2 className="h-3 w-3" /> {t("assistant.playVoice")}
                       </button>
                     </div>
                   )}
@@ -337,7 +291,7 @@ export function ChatScreen() {
               e.preventDefault();
               send(inputText);
             }}
-            className="mt-3 flex items-center gap-2 rounded-full border border-white/10 bg-white/10 p-1.5 focus-within:border-primary/50"
+            className="mt-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-black/25 p-1.5 transition-colors focus-within:border-primary/60"
           >
             <input
               dir="auto"
@@ -346,49 +300,50 @@ export function ChatScreen() {
               onChange={(e) => setInputText(e.target.value)}
               placeholder={t("assistant.placeholder")}
               aria-label={t("assistant.placeholder")}
-              className="flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-white/40"
+              className="h-10 flex-1 bg-transparent px-3 text-[15px] text-white outline-none placeholder:text-white/40"
             />
             <button
               type="submit"
               disabled={thinking || !inputText.trim()}
               aria-label={t("common.send")}
-              className="grid h-9 w-9 place-items-center rounded-full grad-purple shadow-soft transition-all hover:opacity-90 disabled:opacity-50"
+              className="grid h-10 w-10 place-items-center rounded-xl grad-purple shadow-soft transition-all hover:opacity-90 disabled:opacity-50"
             >
               <Send className="h-4 w-4 text-white rtl:-scale-x-100" />
             </button>
           </form>
-          <p className="mt-1.5 text-center text-[10px] text-white/45">
-            {t("privacy.chatNote")}
-          </p>
+          <p className="mt-1.5 text-center text-[10px] text-white/45">{t("privacy.chatNote")}</p>
         </div>
       </div>
 
-      {/* bottom controls */}
-      <div className="relative z-20 flex w-full shrink-0 items-center justify-center gap-5 px-5 pb-6 pt-2">
+      {/* أزرار الصوت */}
+      <div className="relative z-20 flex w-full shrink-0 items-center justify-center gap-4 px-5 pb-5 pt-1">
         <button
           onClick={() => lastReply && playReply(lastReply)}
           disabled={!lastReply}
           aria-label={t("common.listen")}
-          className="grid h-12 w-12 place-items-center rounded-full glass-dark disabled:opacity-40"
+          title={t("common.listen")}
+          className="grid h-12 w-12 place-items-center rounded-full border border-white/10 bg-white/[0.05] hover:bg-white/10 disabled:opacity-40"
         >
           <Volume2 className="h-5 w-5" />
         </button>
         <button
           onClick={stopSpeaking}
           aria-label={t("common.stop")}
-          className="grid h-16 w-16 place-items-center rounded-full bg-white text-deep shadow-glow"
+          title={t("common.stop")}
+          className="grid h-14 w-14 place-items-center rounded-full bg-white text-[oklch(0.3_0.15_292)] shadow-glow"
         >
-          <Pause className="h-6 w-6 fill-current" />
+          <Pause className="h-5 w-5 fill-current" />
         </button>
         <button
           onClick={saveConversation}
           disabled={!bubbles.length}
           aria-label={t("common.save")}
-          className="grid h-12 w-12 place-items-center rounded-full glass-dark text-[10px] font-bold disabled:opacity-40"
+          title={t("common.save")}
+          className="grid h-12 w-12 place-items-center rounded-full border border-white/10 bg-white/[0.05] hover:bg-white/10 disabled:opacity-40"
         >
-          {t("common.save")}
+          <Download className="h-5 w-5" />
         </button>
       </div>
-    </div>
+    </AppShell>
   );
 }

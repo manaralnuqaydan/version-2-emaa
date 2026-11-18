@@ -1,5 +1,4 @@
 import {
-  ChevronRight,
   Volume2,
   VolumeX,
   Send,
@@ -14,17 +13,14 @@ import {
   Delete,
   Space,
 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 import { useState, useRef, useEffect, useCallback } from "react";
 import AvatarViewer from "@/components/ui/AvatarViewer";
 import SpellCaption from "@/components/ui/SpellCaption";
 import CameraConsent, { hasCameraConsent } from "@/components/ui/CameraConsent";
 import { speak, stopSpeaking, useSpeechToText } from "@/lib/speech";
 import { useI18n } from "@/lib/i18n";
-import {
-  LanguageSwitcher,
-  SignLanguagePicker,
-} from "@/components/LanguageControls";
+import { SignLanguagePicker } from "@/components/LanguageControls";
+import { AppShell } from "@/components/layout/AppShell";
 import type { SpellRequest } from "@/components/ui/AvatarViewer";
 import { askAssistant, spellOnAvatar, type ChatTurn } from "@/lib/assistant";
 import {
@@ -155,10 +151,7 @@ export function CameraScreen() {
   const pendingCountRef = useRef(0);
   const committedLetterRef = useRef<string>("");
 
-  const mic = useSpeechToText(
-    (text) => setInputText(text),
-    uiLang === "ar" ? "ar-SA" : "en-US",
-  );
+  const mic = useSpeechToText((text) => setInputText(text), uiLang === "ar" ? "ar-SA" : "en-US");
 
   // نسأل الخادم وش الموديلات المتاحة فعلًا (مثلًا: هل موديل ASL متدرب؟)
   useEffect(() => {
@@ -173,9 +166,7 @@ export function CameraScreen() {
   const usingAslWords = signLang === "asl" && aslMode === "words";
   const aslUnavailable =
     signLang === "asl" &&
-    (usingAslWords
-      ? apiStatus !== null && !apiStatus.asl_words
-      : apiStatus?.asl_letters === false);
+    (usingAslWords ? apiStatus !== null && !apiStatus.asl_words : apiStatus?.asl_letters === false);
 
   // نحمّل Holistic بس لما نحتاجه (وضع كلمات ASL)
   useEffect(() => {
@@ -216,8 +207,7 @@ export function CameraScreen() {
     const frames = signFramesRef.current;
     if (!frames.length || now - lastHandsAtRef.current < SIGN_END_MS) return;
     signFramesRef.current = [];
-    if (frames.length >= MIN_SIGN_FRAMES)
-      sendSequenceToAPI(resampleSequence(frames));
+    if (frames.length >= MIN_SIGN_FRAMES) sendSequenceToAPI(resampleSequence(frames));
   };
 
   const sendSequenceToAPI = async (frames: number[][]) => {
@@ -286,19 +276,12 @@ export function CameraScreen() {
   const askFromSigns = async () => {
     const message = wordRef.current.trim();
     if (!message || asking) return;
-    const history = [
-      ...chatHistoryRef.current,
-      { role: "user" as const, content: message },
-    ];
+    const history = [...chatHistoryRef.current, { role: "user" as const, content: message }];
     setAsking(true);
     try {
       const reply = await askAssistant(history, uiLang, signLang);
-      chatHistoryRef.current = [
-        ...history,
-        { role: "assistant", content: reply.ar || reply.en },
-      ];
-      const text =
-        (uiLang === "ar" ? reply.ar : reply.en) || reply.ar || reply.en;
+      chatHistoryRef.current = [...history, { role: "assistant", content: reply.ar || reply.en }];
+      const text = (uiLang === "ar" ? reply.ar : reply.en) || reply.ar || reply.en;
       respond(text);
       spellOnAvatar(reply.sign, signLang);
       setWord("");
@@ -330,8 +313,7 @@ export function CameraScreen() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const Hands = (window as any).Hands;
       const mpHands = new Hands({
-        locateFile: (file: string) =>
-          `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+        locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
       });
       mpHands.setOptions({
         maxNumHands: 1,
@@ -348,11 +330,7 @@ export function CameraScreen() {
           return;
         }
         const now = Date.now();
-        if (
-          requestInFlight.current ||
-          now - lastPredictTime.current < PREDICT_INTERVAL_MS
-        )
-          return;
+        if (requestInFlight.current || now - lastPredictTime.current < PREDICT_INTERVAL_MS) return;
         lastPredictTime.current = now;
         if (langRef.current === "en") {
           const world = results.multiHandWorldLandmarks?.[0];
@@ -436,24 +414,12 @@ export function CameraScreen() {
     if (!ctx) return null;
     ctx.fillStyle = "#808080";
     ctx.fillRect(0, 0, 64, 64);
-    ctx.drawImage(
-      video,
-      cx - size / 2,
-      cy - size / 2,
-      size,
-      size,
-      0,
-      0,
-      64,
-      64,
-    );
+    ctx.drawImage(video, cx - size / 2, cy - size / 2, size, size, 0, 0, 64, 64);
     return cropCanvasRef.current.toDataURL("image/jpeg", 0.9);
   };
 
   // العبارات: نرسل نقاط اليد الـ21 بإحداثيات الصورة، مثل النسخة الأصلية
-  const sendPhraseToAPI = async (
-    hand: { x: number; y: number; z: number }[],
-  ) => {
+  const sendPhraseToAPI = async (hand: { x: number; y: number; z: number }[]) => {
     requestInFlight.current = true;
     try {
       const res = await fetch(`${SIGN_API_URL}/predict-phrase`, {
@@ -479,14 +445,9 @@ export function CameraScreen() {
       pendingCountRef.current = 0;
       return;
     }
-    pendingCountRef.current =
-      phrase === pendingLetterRef.current ? pendingCountRef.current + 1 : 1;
+    pendingCountRef.current = phrase === pendingLetterRef.current ? pendingCountRef.current + 1 : 1;
     pendingLetterRef.current = phrase;
-    if (
-      pendingCountRef.current < STABLE_READS + 1 ||
-      phrase === committedLetterRef.current
-    )
-      return;
+    if (pendingCountRef.current < STABLE_READS + 1 || phrase === committedLetterRef.current) return;
     committedLetterRef.current = phrase;
     setWord(wordRef.current + phrase + " ");
     if (autoSpeakRef.current) speak(phrase);
@@ -532,10 +493,7 @@ export function CameraScreen() {
       setApiError(false);
       if (!data.prediction || data.prediction === "nothing") return;
       // "space" و "del" إشارات في ASL Alphabet: تنهي الكلمة أو تحذف حرف
-      const token =
-        data.prediction.length === 1
-          ? data.prediction.toLowerCase()
-          : data.prediction;
+      const token = data.prediction.length === 1 ? data.prediction.toLowerCase() : data.prediction;
       handlePrediction(token, data.confidence ?? 0);
     } catch (err) {
       setApiError(true);
@@ -552,20 +510,14 @@ export function CameraScreen() {
     if (conf < MIN_CONFIDENCE) {
       pendingCountRef.current = 0;
       retryCountRef.current += 1;
-      if (retryCountRef.current >= 8)
-        triggerProactiveMode(tRef.current("live.lowConfidence"));
+      if (retryCountRef.current >= 8) triggerProactiveMode(tRef.current("live.lowConfidence"));
       return;
     }
 
     // نضيف الحرف بعد تكراره في قراءات متتالية، ولا نكرره حتى يتغير أو تختفي اليد
-    pendingCountRef.current =
-      letter === pendingLetterRef.current ? pendingCountRef.current + 1 : 1;
+    pendingCountRef.current = letter === pendingLetterRef.current ? pendingCountRef.current + 1 : 1;
     pendingLetterRef.current = letter;
-    if (
-      pendingCountRef.current < STABLE_READS ||
-      letter === committedLetterRef.current
-    )
-      return;
+    if (pendingCountRef.current < STABLE_READS || letter === committedLetterRef.current) return;
 
     committedLetterRef.current = letter;
     retryCountRef.current = 0;
@@ -624,9 +576,7 @@ export function CameraScreen() {
 
   const checkProactiveContext = (text: string) => {
     const lower = text.toLowerCase();
-    const hasStrugglingWord = proactiveKeywords.some((keyword) =>
-      lower.includes(keyword),
-    );
+    const hasStrugglingWord = proactiveKeywords.some((keyword) => lower.includes(keyword));
     if (hasStrugglingWord) {
       retryCountRef.current += 1;
       if (retryCountRef.current >= 2) {
@@ -660,9 +610,7 @@ export function CameraScreen() {
     if (autoSpeakRef.current) speak(userText);
   };
 
-  const partialWord = signTranslation.endsWith(" ")
-    ? ""
-    : (signTranslation.split(" ").pop() ?? "");
+  const partialWord = signTranslation.endsWith(" ") ? "" : (signTranslation.split(" ").pop() ?? "");
   const suggestions = suggestWords(partialWord);
 
   const statusLabel = !isDetecting
@@ -675,68 +623,40 @@ export function CameraScreen() {
   const signLangName = t(`signLang.${signLang}`);
 
   return (
-    <div
-      className="flex min-h-dvh w-full flex-col text-white"
-      style={{ background: "#1a1230" }}
-    >
-      {/* header */}
-      <div className="relative z-20 flex w-full shrink-0 items-center justify-between px-4 pt-5 pb-3 sm:px-5 md:pt-8 md:pb-4">
-        <Link
-          to="/modes"
-          aria-label={t("common.back")}
-          className="grid h-10 w-10 place-items-center rounded-full glass-dark"
-        >
-          <ChevronRight className="h-4 w-4 ltr:-scale-x-100" />
-        </Link>
-        <div className="text-center leading-tight">
-          <div className="text-[10px] tracking-[0.25em] text-white/50">
-            LIVE
-          </div>
-          <div className="text-sm font-semibold">{t("live.title")}</div>
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <LanguageSwitcher dark />
-          <SignLanguagePicker
-            compact
-            dark
-            onChange={() => clearTranslation()}
-          />
+    <AppShell
+      fullHeight
+      actions={
+        <>
+          <SignLanguagePicker compact dark onChange={() => clearTranslation()} />
           <button
             onClick={() => {
               if (autoSpeak) stopSpeaking();
               setAutoSpeak(!autoSpeak);
             }}
             aria-pressed={autoSpeak}
-            aria-label={
-              autoSpeak ? t("live.autoSpeakOn") : t("live.autoSpeakOff")
-            }
+            aria-label={autoSpeak ? t("live.autoSpeakOn") : t("live.autoSpeakOff")}
             title={autoSpeak ? t("live.autoSpeakOn") : t("live.autoSpeakOff")}
-            className={`grid h-10 w-10 place-items-center rounded-full ${autoSpeak ? "grad-purple shadow-soft" : "glass-dark text-white/60"}`}
+            className={`grid h-10 w-10 place-items-center rounded-full ${autoSpeak ? "grad-purple shadow-soft" : "border border-white/10 bg-white/[0.04] text-white/60"}`}
           >
-            {autoSpeak ? (
-              <Volume2 className="h-4 w-4" />
-            ) : (
-              <VolumeX className="h-4 w-4" />
-            )}
+            {autoSpeak ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </button>
           <button
             onClick={resetAll}
             aria-label={t("common.newChat")}
             title={t("common.newChat")}
-            className="grid h-10 w-10 place-items-center rounded-full glass-dark"
+            className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] hover:bg-white/10"
           >
             <RefreshCw className="h-4 w-4" />
           </button>
-        </div>
-      </div>
-
+        </>
+      }
+    >
       {/* شريط مراقبة الـ Agent */}
       {isProactive && (
-        <div className="mx-4 mb-2 flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/20 p-3 text-xs text-amber-200 animate-pulse sm:mx-5">
+        <div className="mx-auto mt-3 flex w-[calc(100%-2rem)] max-w-[1400px] items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/15 p-3 text-xs text-amber-200 sm:w-[calc(100%-3rem)]">
           <AlertCircle className="h-4 w-4 shrink-0 text-amber-400" />
           <div className="flex-1 text-start">
-            <span className="font-bold">{t("assistant.proactiveTitle")}</span>{" "}
-            {proactiveReason}
+            <span className="font-bold">{t("assistant.proactiveTitle")}</span> {proactiveReason}
           </div>
           <button
             onClick={() => setIsProactive(false)}
@@ -749,14 +669,14 @@ export function CameraScreen() {
       )}
 
       {/* main */}
-      <div className="relative z-10 flex flex-1 flex-col gap-4 px-4 pb-4 sm:px-5 md:min-h-0 md:flex-row md:items-stretch md:gap-6 md:pb-5">
+      <div className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-4 pt-4 pb-4 sm:px-6 lg:min-h-0 lg:flex-row lg:items-stretch lg:gap-5 lg:pt-5">
         {/* PERSON A: المستخدم يشير والموديل يترجم الحروف */}
-        <div className="relative flex flex-col overflow-hidden rounded-3xl glass-dark p-4 shadow-card sm:p-5 md:min-h-0 md:flex-1 md:p-6">
+        <div className="relative flex flex-col overflow-hidden rounded-[28px] surface p-4 sm:p-5 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:p-6">
           <div
-            className="absolute inset-0 opacity-80"
+            className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "linear-gradient(160deg, oklch(0.32 0.16 290), oklch(0.18 0.13 280))",
+                "radial-gradient(80% 50% at 0% 0%, oklch(0.45 0.2 295 / 0.35), transparent 70%)",
             }}
           />
 
@@ -772,7 +692,7 @@ export function CameraScreen() {
               </span>
               <span className="font-semibold">{statusLabel}</span>
             </div>
-            <div className="text-[10px] text-white/60">{t("live.user")}</div>
+            <div className="text-[12px] font-semibold text-white/60">{t("live.user")}</div>
           </div>
 
           <div className="relative mt-2 text-[11px] font-semibold text-white/80">
@@ -856,13 +776,11 @@ export function CameraScreen() {
               className="relative mt-2 flex items-center gap-2 rounded-xl border border-amber-400/40 bg-amber-500/15 px-3 py-2 text-[11px] text-amber-100"
             >
               <AlertCircle className="h-3.5 w-3.5 shrink-0 text-amber-300" />
-              {usingAslWords
-                ? t("signLang.aslWordsNotReady")
-                : t("signLang.aslNotReady")}
+              {usingAslWords ? t("signLang.aslWordsNotReady") : t("signLang.aslNotReady")}
             </div>
           )}
 
-          <div className="relative mt-3 aspect-[4/3] w-full shrink-0 overflow-hidden rounded-2xl border border-white/15 bg-black/20 md:aspect-auto md:min-h-[260px] md:flex-1">
+          <div className="relative mt-3 aspect-[4/3] w-full shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-black/40 lg:aspect-auto lg:min-h-[260px] lg:flex-1">
             <video
               ref={videoRef}
               autoPlay
@@ -882,11 +800,8 @@ export function CameraScreen() {
             {!isDetecting && (
               <div className="absolute inset-0 grid place-items-center text-center text-xs text-white/50">
                 <div>
-                  <Camera
-                    className="mx-auto mb-2 h-8 w-8 text-white/30"
-                    strokeWidth={1.4}
-                  />
-                  {lang === "en"
+                  <Camera className="mx-auto mb-2 h-8 w-8 text-white/30" strokeWidth={1.4} />
+                  {signLang === "asl"
                     ? aslMode === "words"
                       ? t("live.hintAslWords")
                       : t("live.hintAsl")
@@ -897,9 +812,7 @@ export function CameraScreen() {
               </div>
             )}
             <div className="absolute end-3 top-3 rounded-xl glass-dark px-3 py-1.5 text-center">
-              <div className="text-[9px] text-white/60">
-                {t("live.confidence")}
-              </div>
+              <div className="text-[9px] text-white/60">{t("live.confidence")}</div>
               <div className="text-base font-black text-gradient">
                 {confidence !== null ? `${Math.round(confidence)}%` : "-"}
               </div>
@@ -925,10 +838,7 @@ export function CameraScreen() {
               onClick={
                 isDetecting
                   ? stopDetection
-                  : () =>
-                      hasCameraConsent()
-                        ? startDetection()
-                        : setAskConsent(true)
+                  : () => (hasCameraConsent() ? startDetection() : setAskConsent(true))
               }
               className={`absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full px-4 py-2 text-xs font-bold shadow-glow transition-all ${isDetecting ? "bg-rose-500 text-white" : "grad-purple text-white"}`}
             >
@@ -966,7 +876,7 @@ export function CameraScreen() {
             )}
           </div>
 
-          <div className="relative mt-3 rounded-2xl bg-white/[0.07] p-3 backdrop-blur sm:p-4">
+          <div className="relative mt-3 rounded-2xl surface-inset p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-[10px] text-white/60">
                 <Sparkles className="h-3 w-3 text-primary" />
@@ -1012,8 +922,7 @@ export function CameraScreen() {
                 onClick={deleteLetter}
                 className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-white/10 py-2 text-[11px] font-semibold hover:bg-white/20"
               >
-                <Delete className="h-3.5 w-3.5 rtl:-scale-x-100" />{" "}
-                {t("live.deleteLetter")}
+                <Delete className="h-3.5 w-3.5 rtl:-scale-x-100" /> {t("live.deleteLetter")}
               </button>
             </div>
             <button
@@ -1028,82 +937,68 @@ export function CameraScreen() {
         </div>
 
         {/* PERSON B: المحاور والأفاتار */}
-        <div
-          className="relative flex flex-col overflow-hidden rounded-3xl glass text-foreground shadow-card md:min-h-0 md:flex-1"
-          style={{
-            background:
-              "linear-gradient(160deg, oklch(0.97 0.02 295 / 0.95), oklch(0.93 0.04 280 / 0.9))",
-          }}
-        >
-          <div className="flex flex-1 flex-col p-4 sm:p-5 md:min-h-0 md:p-6">
+        <div className="relative flex flex-col overflow-hidden rounded-[28px] surface lg:min-h-0 lg:flex-1">
+          <div className="flex flex-1 flex-col p-4 sm:p-5 lg:min-h-0 lg:p-6">
             <div className="flex items-center justify-between">
               <div
-                className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold backdrop-blur transition-all ${isProactive ? "bg-amber-500/20 text-amber-700 animate-pulse" : "bg-primary/10 text-primary"}`}
+                className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold backdrop-blur transition-all ${isProactive ? "bg-amber-500/20 text-amber-200" : "bg-primary/15 text-lavender"}`}
               >
                 <Sparkles className="h-3 w-3" />
-                <span>
-                  {isProactive ? t("live.proactiveOn") : t("live.toSign")}
-                </span>
+                <span>{isProactive ? t("live.proactiveOn") : t("live.toSign")}</span>
               </div>
-              <div className="text-[10px] text-muted-foreground">
-                {t("live.partner")}
-              </div>
+              <div className="text-[12px] font-semibold text-white/60">{t("live.partner")}</div>
             </div>
 
             <div
-              className={`relative mt-3 h-64 overflow-hidden rounded-2xl border-2 transition-all sm:h-72 md:h-auto md:min-h-[260px] md:flex-1 ${isProactive ? "border-amber-400 shadow-lg" : "border-transparent"}`}
+              className={`relative mt-3 h-[min(62vh,26rem)] overflow-hidden rounded-2xl border transition-all sm:h-[28rem] lg:h-auto lg:min-h-[280px] lg:flex-1 ${isProactive ? "border-amber-400/70" : "border-white/[0.06]"}`}
               style={{
                 background:
-                  "radial-gradient(ellipse at center top, oklch(0.9 0.06 295), oklch(0.95 0.02 295) 70%)",
+                  "radial-gradient(70% 60% at 50% 15%, oklch(0.48 0.2 295 / 0.55), transparent 70%), linear-gradient(180deg, oklch(0.18 0.05 290), oklch(0.11 0.03 288))",
               }}
             >
               <AvatarViewer />
-              <SpellCaption />
-              <div className="absolute end-3 top-3 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary backdrop-blur">
+              <SpellCaption dark />
+              <div className="absolute right-3 top-3 rounded-full border border-white/10 bg-black/30 px-2.5 py-1 text-[11px] font-semibold backdrop-blur">
                 {signLangName}
               </div>
             </div>
 
             <div
-              className={`relative mt-3 rounded-2xl border p-3 shadow-soft backdrop-blur transition-all ${isProactive ? "border-amber-300 bg-amber-50/90" : "border-transparent bg-white/85"}`}
+              className={`relative mt-3 rounded-2xl border p-3 shadow-soft backdrop-blur transition-all ${isProactive ? "border-amber-400/50 bg-amber-500/10" : "surface-inset"}`}
             >
               <textarea
                 dir="auto"
                 value={shownReply}
                 onChange={(e) => setReplyText(e.target.value)}
                 rows={3}
-                className="w-full resize-none bg-transparent pt-7 text-start text-base font-medium leading-snug text-foreground outline-none"
+                className="w-full resize-none bg-transparent pt-7 text-start text-base font-medium leading-snug text-white outline-none"
               />
               <div className="absolute end-2 top-2 flex gap-1">
                 <button
                   onClick={() => speak(shownReply)}
                   aria-label={t("common.listen")}
-                  className="grid h-6 w-6 place-items-center rounded-full bg-primary/10 text-primary hover:bg-primary/20"
+                  className="grid h-6 w-6 place-items-center rounded-full bg-primary/20 text-lavender hover:bg-primary/30"
                 >
                   <Volume2 className="h-3 w-3" />
                 </button>
                 <button
                   onClick={() => setReplyText("")}
                   aria-label={t("common.clear")}
-                  className="grid h-6 w-6 place-items-center rounded-full bg-foreground/10 text-foreground/70 hover:bg-foreground/20"
+                  className="grid h-6 w-6 place-items-center rounded-full bg-white/10 text-white/70 hover:bg-white/20"
                 >
                   <X className="h-3 w-3" />
                 </button>
               </div>
             </div>
 
-            <div className="mt-3 flex items-center gap-2 rounded-full bg-white/90 p-2 shadow-soft backdrop-blur">
+            <div className="mt-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-black/25 p-1.5 transition-colors focus-within:border-primary/60">
               {mic.supported && (
                 <button
                   onClick={mic.toggle}
                   aria-label={mic.listening ? t("live.micStop") : t("live.mic")}
-                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-full transition-all ${mic.listening ? "animate-pulse bg-rose-500 text-white" : "bg-foreground/5 text-foreground/70"}`}
+                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-full transition-all ${mic.listening ? "animate-pulse bg-rose-500 text-white" : "bg-white/[0.07] text-white/70 hover:bg-white/15"}`}
                 >
-                  {mic.listening ? (
-                    <MicOff className="h-4 w-4" />
-                  ) : (
-                    <Mic className="h-4 w-4" />
-                  )}
+                  {mic.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </button>
               )}
               <input
@@ -1111,16 +1006,14 @@ export function CameraScreen() {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleTextSend()}
-                placeholder={
-                  mic.listening ? t("live.speakNow") : t("live.typeToSign")
-                }
-                className="min-w-0 flex-1 bg-transparent px-1 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                placeholder={mic.listening ? t("live.speakNow") : t("live.typeToSign")}
+                className="h-10 min-w-0 flex-1 bg-transparent px-1 text-[15px] text-white outline-none placeholder:text-white/40"
               />
               {inputText && (
                 <button
                   onClick={() => setInputText("")}
                   aria-label={t("common.clear")}
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-foreground/10 text-foreground/70 hover:bg-foreground/20"
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/10 text-white/70 hover:bg-white/20"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -1128,7 +1021,7 @@ export function CameraScreen() {
               <button
                 onClick={handleTextSend}
                 aria-label={t("common.send")}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full grad-purple shadow-soft"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl grad-purple shadow-soft"
               >
                 <Send className="h-4 w-4 text-white rtl:-scale-x-100" />
               </button>
@@ -1136,6 +1029,6 @@ export function CameraScreen() {
           </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

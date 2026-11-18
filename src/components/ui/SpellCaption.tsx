@@ -8,13 +8,7 @@ const control = (detail: SpellControl) =>
 
 /** شريط تحت الأفاتار: الحرف اللي يأشّره الحين + إيقاف/متابعة/إعادة/سرعة،
  * والحروف اللي ما لها شكل يد تظهر باهتة مع تنبيه بدل ما نخترع إشارة */
-export default function SpellCaption({
-  dark = false,
-  idle,
-}: {
-  dark?: boolean;
-  idle?: ReactNode;
-}) {
+export default function SpellCaption({ dark = false, idle }: { dark?: boolean; idle?: ReactNode }) {
   const { t, signLang } = useI18n();
   const [state, setState] = useState<SpellState | null>(null);
   const [speed, setSpeed] = useState(1);
@@ -34,15 +28,15 @@ export default function SpellCaption({
   const { tokens, index, status, question: q } = state;
   const letters = tokens.filter((tk) => tk.ch !== " ");
   const missing = letters.filter((tk) => !tk.ok).length;
-  const box = dark ? "bg-black/55 text-white" : "bg-white/85 text-foreground";
+  const box = dark
+    ? "border border-white/10 bg-[oklch(0.13_0.03_288/0.88)] text-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.7)]"
+    : "bg-white/85 text-foreground";
   const btn = dark
     ? "bg-white/15 hover:bg-white/25"
     : "bg-primary/10 text-primary hover:bg-primary/20";
 
   return (
-    <div
-      className={`absolute inset-x-3 bottom-3 rounded-2xl px-3 py-2 backdrop-blur ${box}`}
-    >
+    <div className={`absolute inset-x-3 bottom-3 rounded-2xl px-3 py-2 backdrop-blur ${box}`}>
       <div
         dir={signLang === "arsl" ? "rtl" : "ltr"}
         className="flex flex-wrap justify-center gap-0.5 text-xl font-black"
@@ -76,9 +70,7 @@ export default function SpellCaption({
       )}
       <div className="mt-1.5 flex items-center justify-center gap-1.5 text-[10px]">
         <button
-          onClick={() =>
-            control({ cmd: status === "paused" ? "resume" : "pause" })
-          }
+          onClick={() => control({ cmd: status === "paused" ? "resume" : "pause" })}
           aria-label={t(status === "paused" ? "avatar.resume" : "avatar.pause")}
           title={t(status === "paused" ? "avatar.resume" : "avatar.pause")}
           className={`grid h-7 w-7 place-items-center rounded-full ${btn}`}

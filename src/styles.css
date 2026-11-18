@@ -1,6 +1,8 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import "@fontsource-variable/cairo";
+@import "@fontsource-variable/sora";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -34,46 +36,48 @@
 }
 
 :root {
+  /* هوية emaa: بنفسجي عميق على خلفية ليلية، نفس ألوان الشعار */
   --radius: 1.25rem;
-  --background: oklch(0.985 0.008 295);
-  --foreground: oklch(0.22 0.05 290);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.05 290);
-  --primary: oklch(0.55 0.22 295);
+  --background: oklch(0.14 0.03 290);
+  --foreground: oklch(0.97 0.01 295);
+  --card: oklch(0.19 0.04 290);
+  --card-foreground: oklch(0.97 0.01 295);
+  --primary: oklch(0.64 0.21 293);
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.95 0.03 295);
-  --secondary-foreground: oklch(0.3 0.1 295);
-  --muted: oklch(0.96 0.015 290);
-  --muted-foreground: oklch(0.52 0.04 290);
-  --accent: oklch(0.85 0.1 280);
-  --accent-foreground: oklch(0.25 0.1 290);
-  --border: oklch(0.92 0.02 290);
-  --ring: oklch(0.65 0.18 295);
+  --secondary: oklch(0.24 0.05 292);
+  --secondary-foreground: oklch(0.95 0.02 295);
+  --muted: oklch(0.22 0.035 290);
+  --muted-foreground: oklch(0.74 0.03 292);
+  --accent: oklch(0.78 0.13 295);
+  --accent-foreground: oklch(0.2 0.06 290);
+  --border: oklch(1 0 0 / 0.09);
+  --ring: oklch(0.7 0.18 295);
 
-  --lavender: oklch(0.88 0.08 295);
-  --deep: oklch(0.28 0.12 290);
+  --lavender: oklch(0.86 0.09 295);
+  --deep: oklch(0.2 0.08 290);
   --glow: oklch(0.72 0.22 300);
-  --sky: oklch(0.82 0.08 245);
+  --sky: oklch(0.8 0.1 250);
 
-  --grad-purple: linear-gradient(135deg, oklch(0.55 0.22 295), oklch(0.65 0.2 270));
-  --grad-deep: linear-gradient(160deg, oklch(0.22 0.12 290) 0%, oklch(0.18 0.15 285) 45%, oklch(0.12 0.08 280) 100%);
-  --grad-soft: linear-gradient(160deg, oklch(0.98 0.02 295) 0%, oklch(0.94 0.04 290) 100%);
-  --grad-glass: linear-gradient(135deg, oklch(1 0 0 / 0.7), oklch(1 0 0 / 0.35));
-  --grad-glass-dark: linear-gradient(135deg, oklch(1 0 0 / 0.12), oklch(1 0 0 / 0.04));
+  --grad-purple: linear-gradient(135deg, oklch(0.62 0.23 296), oklch(0.56 0.22 278));
+  --grad-deep: radial-gradient(120% 80% at 50% 0%, oklch(0.26 0.11 292) 0%, oklch(0.14 0.05 288) 55%, oklch(0.1 0.03 285) 100%);
+  --grad-soft: var(--grad-deep);
+  --grad-glass: linear-gradient(160deg, oklch(1 0 0 / 0.075), oklch(1 0 0 / 0.025));
+  --grad-glass-dark: linear-gradient(160deg, oklch(1 0 0 / 0.07), oklch(1 0 0 / 0.02));
 
-  --shadow-soft: 0 10px 30px -10px oklch(0.55 0.22 295 / 0.25);
-  --shadow-glow: 0 0 60px oklch(0.7 0.25 300 / 0.45);
-  --shadow-card: 0 20px 50px -20px oklch(0.4 0.15 290 / 0.25);
+  --shadow-soft: 0 10px 30px -12px oklch(0.6 0.24 295 / 0.55);
+  --shadow-glow: 0 0 0 1px oklch(1 0 0 / 0.08), 0 18px 60px -12px oklch(0.62 0.25 298 / 0.65);
+  --shadow-card: 0 30px 80px -30px oklch(0 0 0 / 0.7), inset 0 1px 0 oklch(1 0 0 / 0.06);
 
-  --font-arabic: "Cairo", "Tajawal", system-ui, sans-serif;
-  --font-display: "Cairo", system-ui, sans-serif;
+  --font-arabic: "Cairo Variable", "Cairo", system-ui, sans-serif;
+  --font-display: "Sora Variable", "Cairo Variable", system-ui, sans-serif;
+  color-scheme: dark;
 }
 
 @layer base {
   * { border-color: var(--color-border); }
   html { direction: rtl; }
   body {
-    background: var(--grad-soft);
+    background: oklch(0.11 0.03 288);
     color: var(--color-foreground);
     font-family: var(--font-arabic);
     -webkit-font-smoothing: antialiased;
@@ -83,9 +87,9 @@
 @layer utilities {
   .glass {
     background: var(--grad-glass);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid oklch(1 0 0 / 0.5);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid oklch(1 0 0 / 0.1);
   }
   .glass-dark {
     background: var(--grad-glass-dark);
@@ -99,6 +103,49 @@
   .shadow-soft { box-shadow: var(--shadow-soft); }
   .shadow-glow { box-shadow: var(--shadow-glow); }
   .shadow-card { box-shadow: var(--shadow-card); }
+  /* خلفية التطبيق: توهج بنفسجي ونجوم خفيفة مثل الشعار */
+  .app-bg {
+    background:
+      radial-gradient(60% 50% at 85% -5%, oklch(0.45 0.2 295 / 0.45), transparent 70%),
+      radial-gradient(50% 45% at 0% 100%, oklch(0.42 0.16 265 / 0.3), transparent 70%),
+      oklch(0.11 0.03 288);
+  }
+  .app-bg::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(1px 1px at 12% 22%, oklch(1 0 0 / 0.5), transparent 60%),
+      radial-gradient(1px 1px at 72% 14%, oklch(1 0 0 / 0.35), transparent 60%),
+      radial-gradient(1.5px 1.5px at 34% 68%, oklch(0.85 0.1 295 / 0.45), transparent 60%),
+      radial-gradient(1px 1px at 88% 58%, oklch(1 0 0 / 0.3), transparent 60%),
+      radial-gradient(1px 1px at 52% 88%, oklch(1 0 0 / 0.25), transparent 60%),
+      radial-gradient(1px 1px at 6% 82%, oklch(1 0 0 / 0.3), transparent 60%);
+    opacity: 0.8;
+  }
+  /* لوحة زجاجية موحدة لكل الشاشات */
+  .surface {
+    background: linear-gradient(165deg, oklch(1 0 0 / 0.065), oklch(1 0 0 / 0.02));
+    border: 1px solid oklch(1 0 0 / 0.09);
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+  }
+  .surface-inset {
+    background: oklch(0 0 0 / 0.22);
+    border: 1px solid oklch(1 0 0 / 0.07);
+  }
+  .font-display { font-family: var(--font-display); }
+  .wordmark {
+    font-family: "Sora Variable", system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    background: linear-gradient(120deg, oklch(0.98 0.02 295) 10%, oklch(0.8 0.15 298) 60%, oklch(0.7 0.2 285));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
   .text-gradient {
     background: linear-gradient(135deg, oklch(0.7 0.22 300), oklch(0.85 0.12 270));
     -webkit-background-clip: text;
@@ -127,7 +174,22 @@
   0%, 100% { transform: translateY(0); opacity: 0.6; }
   50% { transform: translateY(180px); opacity: 1; }
 }
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes orbit-spin { to { transform: rotate(360deg); } }
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .animate-float-slow { animation: float-slow 6s ease-in-out infinite; }
+.animate-float-soft { animation: float-soft 6s ease-in-out infinite; }
+.animate-orbit { animation: orbit-spin 40s linear infinite; }
+.animate-fade-up { animation: fade-up 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-slow, .animate-float-soft, .animate-orbit, .animate-pulse-glow, .animate-fade-up { animation: none; }
+}
 .animate-pulse-glow { animation: pulse-glow 2.4s ease-in-out infinite; }
 .animate-loading { animation: loading-bar 2.5s ease-out infinite; }
 .animate-scan { animation: scan 2.5s ease-in-out infinite; }
