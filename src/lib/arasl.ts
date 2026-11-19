@@ -40,8 +40,8 @@ export const SIGN_API_URL: string =
 
 // أقل نسبة ثقة لقبول الحرف، وعدد القراءات المتتالية المطلوبة لتثبيته
 export const MIN_CONFIDENCE = 60;
-export const STABLE_READS = 2;
-export const PREDICT_INTERVAL_MS = 400;
+export const STABLE_READS = 3;
+export const PREDICT_INTERVAL_MS = 300;
 
 // إذا اختفت اليد هذه المدة تنتهي الكلمة وتنطق
 export const WORD_GAP_MS = 1200;

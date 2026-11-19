@@ -22,6 +22,7 @@ p = argparse.ArgumentParser()
 p.add_argument('--data', default='asl_citizen_landmarks.npz')
 p.add_argument('--epochs', type=int, default=120)
 p.add_argument('--seed', type=int, default=42)
+p.add_argument('--keras-out', help='يحفظ الموديل ويوقف (لـ asl_words_ensemble.py)')
 args = p.parse_args()
 os.makedirs('results', exist_ok=True)
 
@@ -79,6 +80,9 @@ model.fit(train_ds, validation_data=(x[va], y[va]), epochs=args.epochs, verbose=
           callbacks=[tf.keras.callbacks.ReduceLROnPlateau(patience=6, factor=0.5),
                      tf.keras.callbacks.EarlyStopping(patience=15, restore_best_weights=True)])
 train_time = time.time() - t
+if args.keras_out:
+    model.save(args.keras_out)
+    raise SystemExit(0)
 
 prob = model.predict(x[te], verbose=0)
 pred = prob.argmax(1)

@@ -62,3 +62,4 @@ model/training/asl_citizen_cache/
 
 # حركة كلمات ASL للأفاتار مشتقة من ASL Citizen (ترخيص بدون إعادة نشر)
 public/data/asl_word_motions.json
+model/training/seed*.keras

@@ -14,6 +14,7 @@ import CameraConsent, { hasCameraConsent } from "@/components/ui/CameraConsent";
 import { useI18n } from "@/lib/i18n";
 import { AppShell } from "@/components/layout/AppShell";
 import ProactiveAlert from "@/components/ui/ProactiveAlert";
+import { drawLandmarks } from "@/lib/drawLandmarks";
 import { ASL_WORD_MIN_MOTION, isAslWord, visionTip, type Tip } from "@/lib/signRouter";
 import {
   ARASL_LETTERS,
@@ -108,6 +109,7 @@ export function CameraScreen() {
   const lastLightCheck = useRef(0);
   const detectStartRef = useRef(0);
   const lightCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const overlayRef = useRef<HTMLCanvasElement>(null);
 
   const retryCountRef = useRef<number>(0);
   const [askConsent, setAskConsent] = useState(false);
@@ -204,6 +206,8 @@ export function CameraScreen() {
     const hand = r.rightHandLandmarks ?? r.leftHandLandmarks;
     const visible = hasHands(r);
     setHandVisible(visible);
+    if (overlayRef.current && videoRef.current)
+      drawLandmarks(overlayRef.current, videoRef.current, r);
     checkLight(now);
     updateTip(
       visionTip({
@@ -524,6 +528,11 @@ export function CameraScreen() {
               muted
               playsInline
               className="h-full w-full -scale-x-100 object-cover"
+            />
+            <canvas
+              ref={overlayRef}
+              aria-hidden
+              className={`pointer-events-none absolute inset-0 h-full w-full -scale-x-100 object-cover ${isDetecting ? "" : "hidden"}`}
             />
             {isDetecting && (
               <div
