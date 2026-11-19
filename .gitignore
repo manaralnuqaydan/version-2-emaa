@@ -59,3 +59,6 @@ model/training/asl_words.onnx
 model/training/asl_words_classes.json
 model/training/.venv-mp/
 model/training/asl_citizen_cache/
+
+# حركة كلمات ASL للأفاتار مشتقة من ASL Citizen (ترخيص بدون إعادة نشر)
+public/data/asl_word_motions.json

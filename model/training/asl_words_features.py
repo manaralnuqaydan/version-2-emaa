@@ -43,3 +43,12 @@ def mirror_sequence(seq):
     swapped[:, :N_POSE] = pose_present
     pts[~swapped] = 0
     return pts.reshape(len(seq), -1).astype(np.float32)
+
+
+# أسماء مقروءة للكلمات (W.H.A.T ← what، THANKYOU ← thank you، بدون أرقام النسخ)
+WORD_NAMES = {'W.H.A.T': 'what', 'THANKYOU': 'thank you', 'DONTKNOW': "don't know",
+              'WHATFOR1': 'what for', 'ROCKINGCHAIR1': 'rocking chair'}
+
+
+def word_name(label):
+    return WORD_NAMES.get(label, label.rstrip('0123456789').lower())

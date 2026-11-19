@@ -1,5 +1,4 @@
 import {
-  Send,
   Sparkles,
   RefreshCw,
   X,
@@ -11,14 +10,10 @@ import {
   Space,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
-import AvatarViewer from "@/components/ui/AvatarViewer";
-import SpellCaption from "@/components/ui/SpellCaption";
 import CameraConsent, { hasCameraConsent } from "@/components/ui/CameraConsent";
 import { useI18n } from "@/lib/i18n";
 import { AppShell } from "@/components/layout/AppShell";
-import type { SpellRequest } from "@/components/ui/AvatarViewer";
 import ProactiveAlert from "@/components/ui/ProactiveAlert";
-import { controlSpelling, wrongScript } from "@/lib/avatar";
 import { ASL_WORD_MIN_MOTION, isAslWord, visionTip, type Tip } from "@/lib/signRouter";
 import {
   ARASL_LETTERS,
@@ -43,7 +38,6 @@ import {
 type Landmark = { x: number; y: number };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Tracker = any;
-type Replies = Record<string, { response: string }>;
 
 const proactiveKeywords = [
   "لا اعرف",
@@ -85,10 +79,6 @@ type ApiStatus = { asl_words?: boolean } | null;
 export function CameraScreen() {
   const { t, signLang, setSignLang } = useI18n();
   const [signTranslation, setSignTranslation] = useState("");
-  // null يعني الرد الافتراضي بلغة الواجهة الحالية
-  const [replyText, setReplyText] = useState<string | null>(null);
-  const shownReply = replyText ?? t("live.defaultReply");
-  const [inputText, setInputText] = useState("");
   const [isDetecting, setIsDetecting] = useState(false);
   const [handVisible, setHandVisible] = useState(false);
   const [apiError, setApiError] = useState(false);
@@ -128,7 +118,6 @@ export function CameraScreen() {
   const isDetectingRef = useRef(false);
   const requestInFlight = useRef(false);
   const cropCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const repliesRef = useRef<Replies>({});
   // الموديل يتعرف على حروف ArASL، فنجمعها هنا في كلمات
   const wordRef = useRef<string>("");
   const pendingLetterRef = useRef<string>("");
@@ -279,39 +268,15 @@ export function CameraScreen() {
       setWord(before + gap + data.prediction + " ");
       committedLetterRef.current = "";
       pendingCountRef.current = 0;
-      answer(wordRef.current);
     } catch (err) {
       setApiError(true);
       console.error("خطأ في الاتصال بالـ API:", err);
     }
   };
 
-  useEffect(() => {
-    fetch("/data/dataset.json")
-      .then((res) => res.json())
-      .then((data: Replies) => (repliesRef.current = data))
-      .catch(() => {});
-  }, []);
-
   const setWord = (text: string) => {
     wordRef.current = text;
     setSignTranslation(text);
-  };
-
-  const respond = (text: string) => {
-    setReplyText(text);
-  };
-
-  // رد جاهز من dataset.json لما تطابق الجملة المترجمة عبارة معروفة (ميزة النسخة الأصلية)
-  const answer = (text: string) => {
-    const replies = repliesRef.current;
-    const key = Object.keys(replies)
-      .sort((a, b) => b.length - a.length)
-      .find((k) => text.includes(k));
-    if (!key) return false;
-    respond(replies[key].response);
-    window.dispatchEvent(new CustomEvent("playAvatar"));
-    return true;
   };
 
   const processFrame = useCallback(async () => {
@@ -417,7 +382,6 @@ export function CameraScreen() {
     if (signLang !== "arsl") setSignLang("arsl");
     setWord(wordRef.current + letter);
     checkProactiveContext(wordRef.current);
-    answer(wordRef.current);
   };
 
   // عند اختفاء اليد يمكن تكرار نفس الحرف (مثل: لل)، وإذا طال اختفاؤها تنتهي الكلمة
@@ -437,7 +401,6 @@ export function CameraScreen() {
     const word = chosen ?? correctWord(text.slice(start));
     setWord(text.slice(0, start) + word + " ");
     committedLetterRef.current = "";
-    answer(wordRef.current);
   };
 
   const addSpace = () => finishWord();
@@ -458,22 +421,14 @@ export function CameraScreen() {
     retryCountRef.current = 0;
   };
 
-  const resetAll = () => {
-    clearTranslation();
-    setReplyText(null);
-    setInputText("");
-  };
+  const resetAll = clearTranslation;
 
   const checkProactiveContext = (text: string) => {
     const lower = text.toLowerCase();
     const hasStrugglingWord = proactiveKeywords.some((keyword) => lower.includes(keyword));
     if (hasStrugglingWord) {
       retryCountRef.current += 1;
-      if (retryCountRef.current >= 2) {
-        triggerProactiveMode(tRef.current("alert.partnerStruggle"));
-      } else {
-        respond(tRef.current("live.struggleOnce"));
-      }
+      if (retryCountRef.current >= 2) triggerProactiveMode(tRef.current("alert.partnerStruggle"));
     }
   };
 
@@ -482,23 +437,6 @@ export function CameraScreen() {
   const triggerProactiveMode = (reason: string) => {
     setIsProactive(true);
     setProactiveReason(reason);
-    respond(tRef.current("live.struggleRepeat"));
-  };
-
-  // المحاور يكتب أو يتكلم، والأفاتار يترجم إلى إشارة
-  const handleTextSend = () => {
-    const userText = inputText.trim();
-    if (!userText) return;
-    setInputText("");
-    setReplyText(userText);
-    // لغة الكتابة تحدد لغة الإشارة: عربي ← ArSL، إنجليزي ← ASL
-    const lang = wrongScript(userText, signLang) ?? signLang;
-    if (lang !== signLang) setSignLang(lang);
-    window.dispatchEvent(
-      new CustomEvent<SpellRequest>("spellText", {
-        detail: { text: userText, signLang: lang },
-      }),
-    );
   };
 
   const partialWord = signTranslation.endsWith(" ") ? "" : (signTranslation.split(" ").pop() ?? "");
@@ -511,7 +449,6 @@ export function CameraScreen() {
       : handVisible
         ? t("live.translating")
         : t("live.showHand");
-  const signLangName = t(`signLang.${signLang}`);
 
   return (
     <AppShell
@@ -531,29 +468,14 @@ export function CameraScreen() {
     >
       {/* رصد استباقي: تنبيه مكتوب فقط */}
       {isProactive && (
-        <div className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-[1400px] sm:w-[calc(100%-3rem)]">
-          <ProactiveAlert
-            message={proactiveReason}
-            action={
-              replyText
-                ? {
-                    label: t("alert.slower"),
-                    onClick: () => {
-                      controlSpelling({ cmd: "replay" });
-                      controlSpelling({ cmd: "speed", value: 0.5 });
-                      setIsProactive(false);
-                    },
-                  }
-                : undefined
-            }
-            onClose={() => setIsProactive(false)}
-          />
+        <div className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-[900px] sm:w-[calc(100%-3rem)]">
+          <ProactiveAlert message={proactiveReason} onClose={() => setIsProactive(false)} />
         </div>
       )}
 
       {/* main */}
-      <div className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-4 pt-4 pb-4 sm:px-6 lg:min-h-0 lg:flex-row lg:items-stretch lg:gap-5 lg:pt-5">
-        {/* PERSON A: المستخدم يشير والموديل يترجم الحروف */}
+      <div className="relative z-10 mx-auto flex w-full max-w-[900px] flex-1 flex-col px-4 pt-4 pb-4 sm:px-6 lg:min-h-0 lg:pt-5">
+        {/* الكاميرا وتحتها الترجمة (عربي أو إنجليزي) */}
         <div className="relative flex flex-col overflow-hidden rounded-[28px] surface p-4 sm:p-5 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:p-6">
           <div
             className="pointer-events-none absolute inset-0"
@@ -575,7 +497,6 @@ export function CameraScreen() {
               </span>
               <span className="font-semibold">{statusLabel}</span>
             </div>
-            <div className="text-[13px] font-bold text-white/80">{t("live.user")}</div>
           </div>
 
           {wordHint && (
@@ -739,83 +660,6 @@ export function CameraScreen() {
                 className="absolute end-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-white/10 text-white/70 hover:bg-white/20"
               >
                 <X className="h-3 w-3" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* PERSON B: المحاور والأفاتار */}
-        <div className="relative flex flex-col overflow-hidden rounded-[28px] surface lg:min-h-0 lg:flex-1">
-          <div className="flex flex-1 flex-col p-4 sm:p-5 lg:min-h-0 lg:p-6">
-            <div className="flex items-center justify-between">
-              <div className="text-[13px] font-bold text-white/80">{t("live.partner")}</div>
-              {isProactive && (
-                <div className="flex items-center gap-1.5 rounded-full bg-amber-500/20 px-2.5 py-1 text-[10px] font-semibold text-amber-200">
-                  <Sparkles className="h-3 w-3" />
-                  <span>{t("live.proactiveOn")}</span>
-                </div>
-              )}
-            </div>
-
-            <div
-              className={`relative mt-3 h-[min(62vh,26rem)] overflow-hidden rounded-2xl border transition-all sm:h-[28rem] lg:h-auto lg:min-h-[280px] lg:flex-1 ${isProactive ? "border-amber-400/70" : "border-white/[0.06]"}`}
-              style={{
-                background:
-                  "radial-gradient(70% 60% at 50% 15%, oklch(0.48 0.2 295 / 0.55), transparent 70%), linear-gradient(180deg, oklch(0.18 0.05 290), oklch(0.11 0.03 288))",
-              }}
-            >
-              <AvatarViewer />
-              <SpellCaption dark />
-              <div className="absolute right-3 top-3 rounded-full border border-white/10 bg-black/30 px-2.5 py-1 text-[11px] font-semibold backdrop-blur">
-                {signLangName}
-              </div>
-            </div>
-
-            <div
-              className={`relative mt-3 rounded-2xl border p-3 shadow-soft backdrop-blur transition-all ${isProactive ? "border-amber-400/50 bg-amber-500/10" : "surface-inset"}`}
-            >
-              <textarea
-                dir="auto"
-                value={shownReply}
-                onChange={(e) => setReplyText(e.target.value)}
-                rows={3}
-                className="w-full resize-none bg-transparent pt-7 text-start text-base font-medium leading-snug text-white outline-none"
-              />
-              <div className="absolute end-2 top-2 flex gap-1">
-                <button
-                  onClick={() => setReplyText("")}
-                  aria-label={t("common.clear")}
-                  className="grid h-6 w-6 place-items-center rounded-full bg-white/10 text-white/70 hover:bg-white/20"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-black/25 p-1.5 transition-colors focus-within:border-primary/60">
-              <input
-                dir="auto"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleTextSend()}
-                placeholder={t("live.typeToSign")}
-                className="h-10 min-w-0 flex-1 bg-transparent px-1 text-[15px] text-white outline-none placeholder:text-white/40"
-              />
-              {inputText && (
-                <button
-                  onClick={() => setInputText("")}
-                  aria-label={t("common.clear")}
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/10 text-white/70 hover:bg-white/20"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-              <button
-                onClick={handleTextSend}
-                aria-label={t("common.send")}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl grad-purple shadow-soft"
-              >
-                <Send className="h-4 w-4 text-white rtl:-scale-x-100" />
               </button>
             </div>
           </div>

@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { questionType, splitLetters } from "../src/lib/fingerspell.ts";
+import { questionType, splitAslWords, splitLetters } from "../src/lib/fingerspell.ts";
 
 const ar = JSON.parse(
   readFileSync(new URL("../public/data/handshapes_ar.json", import.meta.url), "utf8"),
@@ -30,4 +30,11 @@ test("question type", () => {
   assert.equal(questionType("where are you?"), "wh");
   assert.equal(questionType("are you ok?"), "yesno");
   assert.equal(questionType("hello"), null);
+});
+
+test("English text splits into ASL words, keeping two-word signs together", () => {
+  const known = { "thank you": 1, "don't know": 1, hello: 1 };
+  assert.deepEqual(splitAslWords("Hello, Thank you!", known), ["hello", "thank you"]);
+  assert.deepEqual(splitAslWords("I don’t know", known), ["i", "don't know"]);
+  assert.deepEqual(splitAslWords("thank  me", known), ["thank", "me"]);
 });

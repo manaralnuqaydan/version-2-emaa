@@ -9,8 +9,11 @@ import {
   LETTER_MS,
   questionType,
   solveLetter,
+  solveWordMotion,
+  splitAslWords,
   splitLetters,
   type Handshapes,
+  type WordMotions,
   type QuestionType,
   type SpellToken,
 } from "@/lib/fingerspell";
@@ -171,10 +174,16 @@ function AvatarModel({ action: currentAction }: { action?: string }) {
   // كل لغة إشارة لها أشكال يد منفصلة، وما نخلطهم أبدًا
   const shapes = useRef<Record<SignLang, Handshapes>>({ arsl: {}, asl: {} });
   // تهجئة: وضعية لكل حرف + ساعة خاصة (تتوقف مع الإيقاف وتتأثر بالسرعة)
+  // كلمات ASL كاملة بحركة حقيقية من فيديوهات ASL Citizen (إذا الملف موجود على الجهاز)
+  const wordMotions = useRef<WordMotions>({});
   const spelling = useRef<{
     from: Pose[];
     to: Pose[];
     dip: boolean[]; // حرف مكرر: اليد ترتخي شوي بينهم عشان يبان أنه حرفين
+    dur: number[]; // مدة كل خطوة (حرف أو لقطة من حركة كلمة)
+    ends: number[]; // نهاية كل خطوة على الساعة
+    linear: boolean[]; // لقطات الحركة تنتقل بشكل متصل بدون وقفة
+    step: number[]; // كل خطوة لأي كلمة/حرف في النص
     tokens: SpellToken[];
     clock: number;
     shown: number;
@@ -253,7 +262,7 @@ function AvatarModel({ action: currentAction }: { action?: string }) {
     });
     avatar.traverse((o) => {
       // الملف فيه نسخ مكررة بنفس الاسم، ونعتمد أول نسخة (نفس اللي يرجعها getObjectByName)
-      if ((o as THREE.Bone).isBone && o.name.startsWith("Right") && !restPose.current.has(o.name))
+      if ((o as THREE.Bone).isBone && /^(Right|Left)/.test(o.name) && !restPose.current.has(o.name))
         restPose.current.set(o.name, o.quaternion.clone());
     });
 
@@ -296,17 +305,35 @@ function AvatarModel({ action: currentAction }: { action?: string }) {
     const loading = files.map(([lang, file]) =>
       fetch(`/data/${file}.json`)
         .then((res) => (res.ok ? res.json() : {}))
-        .then((data: Handshapes) => (shapes.current[lang] = data))
+        .then((data: Handshapes) => {
+          shapes.current[lang] = data;
+        })
+        .catch(() => {}),
+    );
+    loading.push(
+      fetch("/data/asl_word_motions.json")
+        .then((res) => (res.ok ? res.json() : {}))
+        .then((data: WordMotions) => {
+          wordMotions.current = data;
+        })
         .catch(() => {}),
     );
     const ready = Promise.all(loading);
     let loaded = false;
     ready.then(() => (loaded = true));
 
-    // يتهجى النص حرفًا حرفًا بأشكال يد مأخوذة من صور حقيقية
+    // يأشّر النص: كلمات ASL المعروفة بحركتها الحقيقية، والباقي يتهجاه حرفًا حرفًا بأشكال يد من صور حقيقية
     const start = (req: SpellRequest) => {
       const langShapes = shapes.current[req.signLang];
-      const tokens = splitLetters(req.text ?? "", langShapes);
+      const motions = wordMotions.current;
+      const text = req.text ?? "";
+      const words = req.signLang === "asl" ? splitAslWords(text, motions) : null;
+      const tokens: SpellToken[] = words
+        ? words.flatMap((w, i) => [
+            ...(i > 0 ? [{ ch: " ", ok: true }] : []),
+            ...(motions[w] ? [{ ch: w, ok: true }] : splitLetters(w, langShapes)),
+          ])
+        : splitLetters(text, langShapes);
       if (!tokens.length) return;
       lastRequest.current = req;
       action.current?.stop();
@@ -317,17 +344,36 @@ function AvatarModel({ action: currentAction }: { action?: string }) {
       avatar.rotation.y = 0;
       const rest = restPose.current;
       const to: Pose[] = [];
+      const dur: number[] = [];
+      const linear: boolean[] = [];
+      const step: number[] = [];
+      const dip: boolean[] = [];
       let last: Pose = rest;
-      for (const tk of tokens) {
-        if (tk.ch === " ")
-          to.push(mixPose(last, rest, 0.4)); // مسافة بين كلمتين: اليد ترتخي
+      tokens.forEach((tk, ti) => {
+        const push = (p: Pose, ms: number, lin = false, d = false) => {
+          to.push(p);
+          dur.push(ms);
+          linear.push(lin);
+          step.push(ti);
+          dip.push(d);
+        };
+        const motion = words && tk.ch !== " " ? motions[tk.ch] : undefined;
+        if (motion) {
+          // أول لقطة: انتقال ناعم لمكان البداية، وبعدها الحركة نفسها بسرعتها الطبيعية تقريبًا
+          const poses = solveWordMotion(avatar, motion, rest);
+          const frameMs = Math.min(90, 1700 / poses.length);
+          poses.forEach((p, i) => push(p, i === 0 ? 450 : frameMs, i > 0));
+          last = poses[poses.length - 1];
+          push(last, 250, true);
+        } else if (tk.ch === " ")
+          push(mixPose(last, rest, 0.4), words ? 300 : LETTER_MS); // مسافة بين كلمتين: اليد ترتخي
         else if (!tk.ok)
-          to.push(mixPose(last, rest, 0.7)); // حرف بدون شكل يد: ما نخترع إشارة
+          push(mixPose(last, rest, 0.7), LETTER_MS); // حرف بدون شكل يد: ما نخترع إشارة
         else {
           last = solveLetter(avatar, langShapes[tk.ch].landmarks, rest);
-          to.push(last);
+          push(last, LETTER_MS, false, ti > 0 && tk.ch === tokens[ti - 1].ch);
         }
-      }
+      });
       current.forEach((q, n) => bone(n).quaternion.copy(q));
       avatar.rotation.y = sway;
       // يضمن نفس العظام في كل وضعية (العظام اللي ما تتحرك تبقى على وضعية الوقوف)
@@ -335,14 +381,19 @@ function AvatarModel({ action: currentAction }: { action?: string }) {
         new Map([...rest].map(([n, q]) => [n, (p.get(n) ?? q).clone()]));
       const toFull = to.map(full);
       const from = [full(current), ...toFull.slice(0, -1)];
+      let sum = 0;
       spelling.current = {
         from,
         to: toFull,
-        dip: tokens.map((tk, i) => i > 0 && tk.ok && tk.ch !== " " && tk.ch === tokens[i - 1].ch),
+        dip,
+        dur,
+        ends: dur.map((d) => (sum += d)),
+        linear,
+        step,
         tokens,
         clock: 0,
         shown: -1,
-        question: req.question ?? questionType(req.text ?? ""),
+        question: req.question ?? questionType(text),
       };
       paused.current = false;
       emitState();
@@ -380,11 +431,13 @@ function AvatarModel({ action: currentAction }: { action?: string }) {
     if (sp) {
       if (!paused.current) sp.clock += delta * 1000 * speed.current;
       const n = sp.to.length;
-      const i = Math.floor(sp.clock / LETTER_MS);
-      const u = (sp.clock - i * LETTER_MS) / LETTER_MS; // 0..1 داخل الحرف
+      let i = 0;
+      while (i < n && sp.clock >= sp.ends[i]) i++;
+      const end = sp.ends[n - 1];
+      const u = i < n ? 1 - (sp.ends[i] - sp.clock) / sp.dur[i] : 1; // 0..1 داخل الخطوة
       let pose: Pose;
       if (i < n) {
-        const k = smooth(u / TRANSITION);
+        const k = sp.linear[i] ? u : smooth(u / TRANSITION);
         if (sp.dip[i]) {
           // حرف مكرر: نرتخي للنص ثم نرجع لنفس الشكل
           const dipPose = mixPose(sp.from[i], restPose.current, 0.3);
@@ -395,12 +448,12 @@ function AvatarModel({ action: currentAction }: { action?: string }) {
         } else pose = mixPose(sp.from[i], sp.to[i], k);
       } else {
         // بعد آخر حرف: رجوع ناعم لوضعية الوقوف
-        const k = smooth((sp.clock - n * LETTER_MS) / (LETTER_MS * 0.8));
+        const k = smooth((sp.clock - end) / (LETTER_MS * 0.8));
         pose = mixPose(sp.to[n - 1], restPose.current, k);
         if (k >= 1) spelling.current = null;
       }
       pose.forEach((q, name) => avatar.getObjectByName(name)!.quaternion.copy(q));
-      const shown = Math.min(i, n);
+      const shown = i < n ? sp.step[i] : sp.tokens.length;
       if (shown !== sp.shown) {
         // الشاشة تعرض الحرف اللي يأشّره الأفاتار الحين
         sp.shown = shown;

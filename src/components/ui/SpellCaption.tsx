@@ -55,7 +55,7 @@ export default function SpellCaption({ dark = false, idle }: { dark?: boolean; i
                     : "opacity-30"
             }
           >
-            {tk.ch === " " ? " " : tk.ch}
+            {tk.ch === " " ? "\u00A0\u00A0" : tk.ch}
           </span>
         ))}
       </div>
