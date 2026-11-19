@@ -18,30 +18,31 @@ export function BrandMark({ size = 40, className = "" }: { size?: number; classN
   );
 }
 
-// الشعار الكامل: اليد + كلمة emaa وتحتها إيماء بخط أصغر
+// الشعار الجديد كامل (اليد + EMAA + إيماء) كصورة
+export function BrandFull({ className = "", large = false }: { className?: string; large?: boolean }) {
+  return (
+    <img
+      src={large ? "/brand/emaa-logo-full.png" : "/brand/emaa-logo-128.png"}
+      alt="EMAA إيماء"
+      draggable={false}
+      className={`select-none ${className}`}
+    />
+  );
+}
+
+// شعار الهيدر
 export function BrandLogo({ compact = false }: { compact?: boolean }) {
   const { t } = useI18n();
   return (
     <Link
       to="/home"
       aria-label={t("common.home")}
-      className="group flex items-center gap-2 rounded-2xl pe-2 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group relative flex items-center rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <span className="relative grid h-10 w-10 place-items-center">
-        <span className="absolute inset-0 rounded-full bg-primary/25 blur-md transition-opacity group-hover:opacity-100 opacity-60" />
-        <BrandMark
-          size={44}
-          className="relative -my-1 drop-shadow-[0_4px_14px_oklch(0.6_0.25_295/0.6)]"
-        />
-      </span>
-      {!compact && (
-        <span className="flex flex-col items-center leading-none">
-          <span dir="ltr" className="wordmark text-[22px]">
-            emaa
-          </span>
-          <span className="mt-0.5 text-[11px] font-semibold text-white/55">إيماء</span>
-        </span>
-      )}
+      <span className="absolute inset-2 rounded-full bg-primary/25 blur-lg opacity-60 transition-opacity group-hover:opacity-100" />
+      <BrandFull
+        className={`relative w-auto drop-shadow-[0_4px_14px_oklch(0.6_0.25_295/0.5)] ${compact ? "h-10" : "h-14 sm:h-[60px]"}`}
+      />
     </Link>
   );
 }

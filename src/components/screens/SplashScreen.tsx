@@ -1,5 +1,5 @@
 import { useI18n } from "@/lib/i18n";
-import { BrandMark } from "@/components/Brand";
+import { BrandFull } from "@/components/Brand";
 
 export function SplashScreen() {
   const { t } = useI18n();
@@ -11,21 +11,17 @@ export function SplashScreen() {
         <div className="relative animate-fade-up">
           <div className="absolute inset-[8%] rounded-full border border-white/[0.07]" />
           <div className="absolute inset-[22%] rounded-full border border-dashed border-white/[0.09] animate-orbit" />
-          <BrandMark
-            size={360}
-            className="relative h-[clamp(200px,38vh,360px)] w-[clamp(200px,38vh,360px)] animate-float-soft drop-shadow-[0_30px_70px_oklch(0.55_0.26_295/0.6)]"
+          <BrandFull
+            large
+            className="relative h-auto w-[min(86vw,560px)] animate-float-soft drop-shadow-[0_30px_70px_oklch(0.55_0.26_295/0.6)]"
           />
         </div>
 
-        <h1 dir="ltr" className="mt-2 animate-fade-up [animation-delay:150ms]">
-          <span className="wordmark text-[clamp(56px,11vw,104px)] leading-none">emaa</span>
-        </h1>
-        <div className="mt-1 text-xl font-bold text-white/70 animate-fade-up [animation-delay:250ms]">
-          إيماء
+        <div className="mt-3 flex flex-col items-center gap-0.5 animate-fade-up [animation-delay:350ms]">
+          <p dir="rtl" lang="ar" className="text-sm font-medium text-white/45">تواصل يفهمك بدون كلام</p>
+          <p dir="ltr" lang="en" className="text-xs text-white/40">Communication that understands you, without words</p>
+          <p dir="ltr" lang="ko" className="text-xs text-white/40">말 없이도 당신을 이해하는 소통</p>
         </div>
-        <p className="mt-4 max-w-sm text-[15px] text-white/60 animate-fade-up [animation-delay:350ms]">
-          {t("splash.tagline")}
-        </p>
 
         <div className="mt-10 h-1 w-48 overflow-hidden rounded-full bg-white/10 animate-fade-up [animation-delay:450ms]">
           <div

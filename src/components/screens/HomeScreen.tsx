@@ -2,7 +2,7 @@ import { ArrowLeft, Camera, Hand, Type } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import { AppShell } from "@/components/layout/AppShell";
-import { BrandMark } from "@/components/Brand";
+import { BrandFull } from "@/components/Brand";
 
 // الشعار الكبير في الصفحة الرئيسية: اليد داخل مدارات تدور ببطء
 function HeroVisual() {
@@ -12,9 +12,9 @@ function HeroVisual() {
       <div className="absolute inset-[4%] rounded-full border border-white/[0.06]" />
       <div className="absolute inset-[16%] rounded-full border border-dashed border-white/[0.08] animate-orbit" />
       <div className="absolute inset-0 grid place-items-center animate-float-soft">
-        <BrandMark
-          size={460}
-          className="h-[86%] w-[86%] drop-shadow-[0_30px_60px_oklch(0.5_0.25_295/0.55)]"
+        <BrandFull
+          large
+          className="h-auto w-[96%] drop-shadow-[0_30px_60px_oklch(0.5_0.25_295/0.55)]"
         />
       </div>
     </div>

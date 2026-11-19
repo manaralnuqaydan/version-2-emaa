@@ -31,7 +31,7 @@ export function AppShell({
       className={`relative flex min-h-dvh w-full flex-col text-foreground ${fullHeight ? "lg:h-dvh lg:overflow-hidden" : ""}`}
     >
       <header className="sticky top-0 z-40 shrink-0 border-b border-white/[0.06] bg-[oklch(0.12_0.03_288/0.72)] backdrop-blur-xl">
-        <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center gap-3 px-4 sm:px-6">
+        <div className="mx-auto flex h-[72px] w-full max-w-[1400px] items-center gap-3 px-4 sm:px-6">
           <BrandLogo />
           <nav
             aria-label={t("nav.label")}
