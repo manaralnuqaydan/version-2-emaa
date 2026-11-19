@@ -49,3 +49,8 @@ model/asl_alphabet_train/
 model/asl_citizen_landmarks.npz
 model/asl_citizen_cache/
 model/ASL_Citizen*.zip
+
+# Datasets and local training environments (never commit: licence)
+*.npz
+model/training/.venv-mp/
+model/training/asl_citizen_cache/

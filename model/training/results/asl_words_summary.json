@@ -1,0 +1,17 @@
+{
+ "name": "Holistic landmarks + 1D-CNN (ours)",
+ "dataset": "ASL Citizen (subset)",
+ "classes": 100,
+ "test_videos": 1290,
+ "test_signers": 11,
+ "signer_independent": true,
+ "accuracy": 0.8550387596899225,
+ "top5_accuracy": 0.9689922480620154,
+ "precision_macro": 0.8609184955910962,
+ "recall_macro": 0.8540322128851539,
+ "f1_macro": 0.8523257392080885,
+ "val_accuracy": 0.8700265288352966,
+ "latency_ms": 5.588569641113281,
+ "params": 730148,
+ "train_time_min": 2.472680366039276
+}
