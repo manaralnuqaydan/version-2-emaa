@@ -71,11 +71,11 @@
     "partner": "Hearing person replies",
     "hintArsl": "Fingerspell Arabic Sign Language letters",
     "hintAsl": "Fingerspell American Sign Language letters",
-    "confidence": "Model confidence",
+    "confidence": "Confidence",
     "start": "Start detection",
     "stop": "Stop",
-    "spellHint": "Spell the word letter by letter, then lower your hand for a second to end the word",
-    "idleHint": "Recognises letters and groups them into words",
+    "spellHint": "Sign, then lower your hand for a second when the word is done",
+    "idleHint": "Arabic letters or English words, recognised automatically",
     "idleHintWords": "Recognises whole signed words and builds a sentence",
     "signText": "Sign translation",
     "endWord": "End word",
@@ -94,8 +94,9 @@
     "hintPhrases": "Sign a phrase: \"Assalamu alaikum\" or \"How are you\" (original model, two phrases only)",
     "words": "Words",
     "hintAslWords": "Sign a whole ASL word, then lower your hands; the model reads the movement",
-    "wordUnsure": "The model is not sure. Closest: {words}",
-    "loadingHolistic": "Loading body and hand tracker..."
+    "wordUnsure": "The sign wasn't clear. Did you mean: {words}?",
+    "loadingHolistic": "Loading body and hand tracker...",
+    "hintAny": "Sign in Arabic or English and the text appears"
   },
   "overview": {
     "splash": "emaa splash screen",
@@ -147,7 +148,13 @@
   "alert": {
     "struggle": "Looks like something wasn't clear. Want the avatar to repeat it slower?",
     "slower": "Replay slower",
-    "lowConfidence": "The model isn't sure about the sign. Move your hand closer to the camera and use better lighting.",
+    "lowConfidence": "The sign isn't clear. Move your hand closer to the camera and use better lighting.",
     "partnerStruggle": "Looks like something is hard to understand. Want the avatar to repeat the reply slowly?"
+  },
+  "tip": {
+    "light": "Too dark, move closer to a light",
+    "closer": "Move your hand closer to the camera",
+    "center": "Keep your hand in the middle of the picture",
+    "showHand": "Raise your hand in front of the camera"
   }
 }

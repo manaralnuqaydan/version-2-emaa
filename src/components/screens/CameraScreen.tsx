@@ -6,6 +6,7 @@ import {
   Camera,
   Pause,
   AlertCircle,
+  Lightbulb,
   Delete,
   Space,
 } from "lucide-react";
@@ -14,11 +15,11 @@ import AvatarViewer from "@/components/ui/AvatarViewer";
 import SpellCaption from "@/components/ui/SpellCaption";
 import CameraConsent, { hasCameraConsent } from "@/components/ui/CameraConsent";
 import { useI18n } from "@/lib/i18n";
-import { SignLanguagePicker } from "@/components/LanguageControls";
 import { AppShell } from "@/components/layout/AppShell";
 import type { SpellRequest } from "@/components/ui/AvatarViewer";
 import ProactiveAlert from "@/components/ui/ProactiveAlert";
-import { controlSpelling } from "@/lib/avatar";
+import { controlSpelling, wrongScript } from "@/lib/avatar";
+import { ASL_WORD_MIN_MOTION, isAslWord, visionTip, type Tip } from "@/lib/signRouter";
 import {
   ARASL_LETTERS,
   MIN_CONFIDENCE,
@@ -40,6 +41,8 @@ import {
 } from "@/lib/aslWords";
 
 type Landmark = { x: number; y: number };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Tracker = any;
 type Replies = Record<string, { response: string }>;
 
 const proactiveKeywords = [
@@ -77,15 +80,10 @@ const proactiveKeywords = [
   "help",
 ];
 
-type ApiStatus = {
-  asl_letters: boolean;
-  asl_words?: boolean;
-  arsl_phrases?: boolean;
-} | null;
-const PHRASE_MIN_CONFIDENCE = 80;
+type ApiStatus = { asl_words?: boolean } | null;
 
 export function CameraScreen() {
-  const { t, signLang } = useI18n();
+  const { t, signLang, setSignLang } = useI18n();
   const [signTranslation, setSignTranslation] = useState("");
   // null يعني الرد الافتراضي بلغة الواجهة الحالية
   const [replyText, setReplyText] = useState<string | null>(null);
@@ -98,35 +96,33 @@ export function CameraScreen() {
   const [confidence, setConfidence] = useState<number | null>(null);
   const [isProactive, setIsProactive] = useState<boolean>(false);
   const [proactiveReason, setProactiveReason] = useState<string>("");
-  // لغة الإشارة اللي يقرأها من الكاميرا: العربية (ArASL) أو الأمريكية (ASL)
-  // تنختار من شاشة الأوضاع أو من الزر هنا، ومستقلة عن لغة الواجهة
-  const lang = signLang === "asl" ? "en" : "ar";
-  const langRef = useRef(lang);
-  langRef.current = lang;
   const tRef = useRef(t);
   tRef.current = t;
   const [apiStatus, setApiStatus] = useState<ApiStatus>(null);
-  // في العربي: حروف (موديل ArASL) أو عبارات (موديل النسخة الأصلية)
-  const [arslMode, setArslMode] = useState<"letters" | "phrases">("letters");
-  const arslModeRef = useRef(arslMode);
-  arslModeRef.current = arslMode;
-  // في ASL: حروف (نقاط يد وحدة) أو كلمات (حركة كاملة بـ Holistic)
-  const [aslMode, setAslMode] = useState<"letters" | "words">("letters");
-  const aslModeRef = useRef(aslMode);
-  aslModeRef.current = aslMode;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const holisticRef = useRef<any>(null);
-  const [holisticLoading, setHolisticLoading] = useState(false);
+  // متتبع واحد (Holistic) للعربي والإنجليزي: اليد للحروف العربية، والحركة كاملة لكلمات ASL
+  const holisticRef = useRef<Tracker>(null);
   const signFramesRef = useRef<number[][]>([]);
   const lastHandsAtRef = useRef(0);
   const [wordHint, setWordHint] = useState<string | null>(null);
+  // وين بدأت الإشارة الحالية في النص، عشان لو طلعت كلمة إنجليزية نبدل الحروف اللي انكتبت أثناءها
+  const segmentStartRef = useRef(0);
+  const segmentLettersRef = useRef(0);
+  // رصد استباقي من الصورة نفسها: قرّب يدك، الإضاءة، وسط الصورة
+  const [tip, setTip] = useState<Tip | null>(null);
+  const tipRef = useRef<{ key: Tip | null; since: number; shownAt: number }>({
+    key: null,
+    since: 0,
+    shownAt: 0,
+  });
+  const darkRef = useRef(false);
+  const lastLightCheck = useRef(0);
+  const detectStartRef = useRef(0);
+  const lightCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const retryCountRef = useRef<number>(0);
   const [askConsent, setAskConsent] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handsRef = useRef<any>(null);
   const animFrameRef = useRef<number | null>(null);
   const lastPredictTime = useRef<number>(0);
   const isDetectingRef = useRef(false);
@@ -145,24 +141,18 @@ export function CameraScreen() {
       .then((res) => res.json())
       .then((data) => {
         setApiStatus(data.models ?? null);
-        // ما عندنا حروف ASL بس عندنا كلمات: نبدأ بالكلمات
-        if (data.models?.asl_words && !data.models?.asl_letters) setAslMode("words");
       })
       .catch(() => setApiStatus(null));
   }, []);
-  const usingAslWords = signLang === "asl" && aslMode === "words";
-  const aslUnavailable =
-    signLang === "asl" &&
-    (usingAslWords ? apiStatus !== null && !apiStatus.asl_words : apiStatus?.asl_letters === false);
+  const aslWordsReady = !!apiStatus?.asl_words;
+  const aslWordsReadyRef = useRef(aslWordsReady);
+  aslWordsReadyRef.current = aslWordsReady;
 
-  // نحمّل Holistic بس لما نحتاجه (وضع كلمات ASL)
+  // نحمّل المتتبع مرة وحدة
   useEffect(() => {
-    if (!usingAslWords || holisticRef.current) return;
-    setHolisticLoading(true);
     loadHolisticScript()
       .then(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const Holistic = (window as any).Holistic;
+        const Holistic = (window as Tracker).Holistic;
         const h = new Holistic({
           locateFile: (file: string) =>
             `https://cdn.jsdelivr.net/npm/@mediapipe/holistic@0.5.1675471629/${file}`,
@@ -175,29 +165,88 @@ export function CameraScreen() {
         h.onResults((r: HolisticResults) => onHolisticResults(r));
         holisticRef.current = h;
       })
-      .catch(() => setApiError(true))
-      .finally(() => setHolisticLoading(false));
+      .catch(() => setApiError(true));
+    return () => {
+      isDetectingRef.current = false;
+      streamRef.current?.getTracks().forEach((tr) => tr.stop());
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usingAslWords]);
+  }, []);
 
-  // نجمع لقطات الإشارة، ولما تختفي اليدين نرسل الحركة كاملة
+  // الإضاءة: نصغّر الصورة ونحسب متوسط السطوع مرة كل ثانية
+  const checkLight = (now: number) => {
+    const video = videoRef.current;
+    if (!video?.videoWidth || now - lastLightCheck.current < 1000) return;
+    lastLightCheck.current = now;
+    lightCanvasRef.current ??= Object.assign(document.createElement("canvas"), {
+      width: 16,
+      height: 12,
+    });
+    const ctx = lightCanvasRef.current.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, 16, 12);
+    const px = ctx.getImageData(0, 0, 16, 12).data;
+    let sum = 0;
+    for (let i = 0; i < px.length; i += 4)
+      sum += 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+    darkRef.current = sum / (px.length / 4) < 55;
+  };
+
+  // نعرض النصيحة إذا استمرت الحالة لحظة، ونخليها ظاهرة شوي عشان ما ترمش
+  const updateTip = (key: Tip | null, now: number) => {
+    const s = tipRef.current;
+    if (key !== s.key) {
+      s.key = key;
+      s.since = now;
+    }
+    if (key && now - s.since > 800) {
+      if (tip !== key) setTip(key);
+      s.shownAt = now;
+    } else if (!key && now - s.shownAt > 2000) {
+      setTip((cur) => (cur ? null : cur));
+    }
+  };
+
+  // كل لقطة: الحروف العربية من شكل اليد (أثناء الإشارة)، وكلمات ASL من الحركة كاملة (بعد ما تنزل اليد)
   const onHolisticResults = (r: HolisticResults) => {
     if (!isDetectingRef.current) return;
     const now = Date.now();
+    const hand = r.rightHandLandmarks ?? r.leftHandLandmarks;
     const visible = hasHands(r);
     setHandVisible(visible);
-    if (visible) {
+    checkLight(now);
+    updateTip(
+      visionTip({
+        hand,
+        dark: darkRef.current,
+        msWithoutHand: now - Math.max(lastHandsAtRef.current, detectStartRef.current),
+      }),
+      now,
+    );
+    if (visible && hand) {
+      if (!signFramesRef.current.length) {
+        segmentStartRef.current = wordRef.current.length;
+        segmentLettersRef.current = 0;
+      }
       signFramesRef.current.push(holisticFrame(r));
       lastHandsAtRef.current = now;
+      if (requestInFlight.current || now - lastPredictTime.current < PREDICT_INTERVAL_MS) return;
+      lastPredictTime.current = now;
+      const image = cropHand(hand);
+      if (image) sendImageToAPI(image);
       return;
     }
     const frames = signFramesRef.current;
     if (!frames.length || now - lastHandsAtRef.current < SIGN_END_MS) return;
     signFramesRef.current = [];
-    if (frames.length >= MIN_SIGN_FRAMES) sendSequenceToAPI(resampleSequence(frames));
+    if (frames.length >= MIN_SIGN_FRAMES && aslWordsReadyRef.current)
+      sendSequenceToAPI(resampleSequence(frames), segmentStartRef.current);
   };
 
-  const sendSequenceToAPI = async (frames: number[][]) => {
+  // بعد ما تخلص الإشارة: هل هي كلمة من كلمات ASL اللي تدرب عليها الموديل الإنجليزي؟
+  // إذا نعم نبدل الحروف العربية اللي انكتبت أثناءها بالكلمة. وإذا لا تبقى الحروف العربية.
+  const sendSequenceToAPI = async (frames: number[][], segmentStart: number) => {
     try {
       const res = await fetch(`${SIGN_API_URL}/predict-asl-word`, {
         method: "POST",
@@ -207,19 +256,29 @@ export function CameraScreen() {
       const data: {
         prediction: string;
         confidence: number;
+        motion?: number;
         top: { word: string }[];
       } = await res.json();
       setApiError(false);
-      setConfidence(data.confidence);
       if (!data.prediction) return;
-      if (data.confidence < MIN_CONFIDENCE) {
-        // ما نخمّن: نعرض أقرب الكلمات ونخلي المستخدم يختار أو يعيد
-        setWordHint(data.top.map((w) => w.word.toLowerCase()).join("، "));
+      const letters = segmentLettersRef.current;
+      if (!isAslWord(data.confidence, data.motion ?? 0, letters)) {
+        // ما هي كلمة إنجليزية ولا انكتب حرف عربي: نقترح أقرب الكلمات بدل ما نخمّن
+        setWordHint(
+          letters === 0 && (data.motion ?? 0) >= ASL_WORD_MIN_MOTION && data.confidence >= 35
+            ? data.top.map((w) => w.word).join("، ")
+            : null,
+        );
         return;
       }
       setWordHint(null);
-      const word = data.prediction.toLowerCase();
-      setWord(wordRef.current + word + " ");
+      setConfidence(data.confidence);
+      setSignLang("asl");
+      const before = wordRef.current.slice(0, segmentStart);
+      const gap = before && !before.endsWith(" ") ? " " : "";
+      setWord(before + gap + data.prediction + " ");
+      committedLetterRef.current = "";
+      pendingCountRef.current = 0;
       answer(wordRef.current);
     } catch (err) {
       setApiError(true);
@@ -255,75 +314,9 @@ export function CameraScreen() {
     return true;
   };
 
-  useEffect(() => {
-    const loadMediaPipe = () => {
-      return new Promise<void>((resolve) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((window as any).Hands) {
-          resolve();
-          return;
-        }
-        const s1 = document.createElement("script");
-        s1.src = "https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js";
-        s1.crossOrigin = "anonymous";
-        s1.onload = () => resolve();
-        document.head.appendChild(s1);
-      });
-    };
-
-    loadMediaPipe().then(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const Hands = (window as any).Hands;
-      const mpHands = new Hands({
-        locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
-      });
-      mpHands.setOptions({
-        maxNumHands: 1,
-        modelComplexity: 1,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5,
-      });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mpHands.onResults((results: any) => {
-        if (!isDetectingRef.current) return;
-        const hand = results.multiHandLandmarks?.[0];
-        setHandVisible(!!hand);
-        if (!hand) {
-          return;
-        }
-        const now = Date.now();
-        if (requestInFlight.current || now - lastPredictTime.current < PREDICT_INTERVAL_MS) return;
-        lastPredictTime.current = now;
-        if (langRef.current === "en") {
-          const world = results.multiHandWorldLandmarks?.[0];
-          const side = results.multiHandedness?.[0]?.label ?? "Right";
-          if (world) sendLandmarksToAPI(world, side);
-          return;
-        }
-        if (arslModeRef.current === "phrases") {
-          sendPhraseToAPI(hand);
-          return;
-        }
-        const image = cropHand(hand);
-        if (image) sendImageToAPI(image);
-      });
-      handsRef.current = mpHands;
-    });
-
-    return () => {
-      isDetectingRef.current = false;
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    };
-  }, []);
-
   const processFrame = useCallback(async () => {
     if (!isDetectingRef.current || !videoRef.current) return;
-    const tracker =
-      langRef.current === "en" && aslModeRef.current === "words"
-        ? holisticRef.current
-        : handsRef.current;
-    if (tracker) await tracker.send({ image: videoRef.current });
+    if (holisticRef.current) await holisticRef.current.send({ image: videoRef.current });
     animFrameRef.current = requestAnimationFrame(processFrame);
   }, []);
 
@@ -337,6 +330,8 @@ export function CameraScreen() {
         await videoRef.current.play();
       }
       isDetectingRef.current = true;
+      detectStartRef.current = Date.now();
+      lastHandsAtRef.current = 0;
       setIsDetecting(true);
       animFrameRef.current = requestAnimationFrame(processFrame);
     } catch (err) {
@@ -349,6 +344,7 @@ export function CameraScreen() {
     isDetectingRef.current = false;
     setIsDetecting(false);
     setHandVisible(false);
+    setTip(null);
     streamRef.current?.getTracks().forEach((t) => t.stop());
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
   }, []);
@@ -379,41 +375,6 @@ export function CameraScreen() {
     return cropCanvasRef.current.toDataURL("image/jpeg", 0.9);
   };
 
-  // العبارات: نرسل نقاط اليد الـ21 بإحداثيات الصورة، مثل النسخة الأصلية
-  const sendPhraseToAPI = async (hand: { x: number; y: number; z: number }[]) => {
-    requestInFlight.current = true;
-    try {
-      const res = await fetch(`${SIGN_API_URL}/predict-phrase`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ landmarks: hand.map((p) => [p.x, p.y, p.z]) }),
-      });
-      const data = await res.json();
-      setApiError(false);
-      if (data.prediction) handlePhrase(data.prediction, data.confidence ?? 0);
-    } catch (err) {
-      setApiError(true);
-      console.error("خطأ في الاتصال بالـ API:", err);
-    } finally {
-      requestInFlight.current = false;
-    }
-  };
-
-  // الموديل الأصلي فيه عبارتين بس ودايم يختار وحدة منهم، فنطلب ثقة عالية وثبات
-  const handlePhrase = (phrase: string, conf: number) => {
-    setConfidence(conf);
-    if (conf < PHRASE_MIN_CONFIDENCE) {
-      pendingCountRef.current = 0;
-      return;
-    }
-    pendingCountRef.current = phrase === pendingLetterRef.current ? pendingCountRef.current + 1 : 1;
-    pendingLetterRef.current = phrase;
-    if (pendingCountRef.current < STABLE_READS + 1 || phrase === committedLetterRef.current) return;
-    committedLetterRef.current = phrase;
-    setWord(wordRef.current + phrase + " ");
-    answer(wordRef.current);
-  };
-
   const sendImageToAPI = async (image: string) => {
     requestInFlight.current = true;
     try {
@@ -426,35 +387,6 @@ export function CameraScreen() {
       setApiError(false);
       if (!ARASL_LETTERS.includes(data.prediction)) return;
       handlePrediction(data.prediction, data.confidence ?? 0);
-    } catch (err) {
-      setApiError(true);
-      console.error("خطأ في الاتصال بالـ API:", err);
-    } finally {
-      requestInFlight.current = false;
-    }
-  };
-
-  // ASL: نرسل نقاط اليد الـ21 بدل الصورة
-  const sendLandmarksToAPI = async (
-    world: { x: number; y: number; z: number }[],
-    handedness: string,
-  ) => {
-    requestInFlight.current = true;
-    try {
-      const res = await fetch(`${SIGN_API_URL}/predict-asl`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          landmarks: world.map((p) => [p.x, p.y, p.z]),
-          handedness,
-        }),
-      });
-      const data = await res.json();
-      setApiError(false);
-      if (!data.prediction || data.prediction === "nothing") return;
-      // "space" و "del" إشارات في ASL Alphabet: تنهي الكلمة أو تحذف حرف
-      const token = data.prediction.length === 1 ? data.prediction.toLowerCase() : data.prediction;
-      handlePrediction(token, data.confidence ?? 0);
     } catch (err) {
       setApiError(true);
       console.error("خطأ في الاتصال بالـ API:", err);
@@ -481,8 +413,8 @@ export function CameraScreen() {
 
     committedLetterRef.current = letter;
     retryCountRef.current = 0;
-    if (letter === "space") return finishWord();
-    if (letter === "del") return deleteLetter();
+    segmentLettersRef.current += 1;
+    if (signLang !== "arsl") setSignLang("arsl");
     setWord(wordRef.current + letter);
     checkProactiveContext(wordRef.current);
     answer(wordRef.current);
@@ -559,10 +491,12 @@ export function CameraScreen() {
     if (!userText) return;
     setInputText("");
     setReplyText(userText);
-    // الأفاتار يتهجى النص حرفًا حرفًا بأشكال يد حقيقية من ArASL
+    // لغة الكتابة تحدد لغة الإشارة: عربي ← ArSL، إنجليزي ← ASL
+    const lang = wrongScript(userText, signLang) ?? signLang;
+    if (lang !== signLang) setSignLang(lang);
     window.dispatchEvent(
       new CustomEvent<SpellRequest>("spellText", {
-        detail: { text: userText, signLang },
+        detail: { text: userText, signLang: lang },
       }),
     );
   };
@@ -584,7 +518,6 @@ export function CameraScreen() {
       fullHeight
       actions={
         <>
-          <SignLanguagePicker compact dark onChange={() => clearTranslation()} />
           <button
             onClick={resetAll}
             aria-label={t("common.newChat")}
@@ -645,61 +578,6 @@ export function CameraScreen() {
             <div className="text-[13px] font-bold text-white/80">{t("live.user")}</div>
           </div>
 
-          {signLang === "arsl" && apiStatus?.arsl_phrases !== false && (
-            <div
-              role="radiogroup"
-              aria-label={t("live.recogMode")}
-              className="relative mt-2 flex w-fit gap-0.5 rounded-full bg-white/10 p-1 text-[11px] font-bold"
-            >
-              {(["letters", "phrases"] as const).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  role="radio"
-                  aria-checked={arslMode === m}
-                  onClick={() => {
-                    setArslMode(m);
-                    pendingCountRef.current = 0;
-                    committedLetterRef.current = "";
-                  }}
-                  className={`rounded-full px-3 py-1 transition-all ${arslMode === m ? "grad-purple text-white" : "text-white/60"}`}
-                >
-                  {t(`live.${m}`)}
-                </button>
-              ))}
-            </div>
-          )}
-          {signLang === "asl" && (
-            <div
-              role="radiogroup"
-              aria-label={t("live.recogMode")}
-              className="relative mt-2 flex w-fit gap-0.5 rounded-full bg-white/10 p-1 text-[11px] font-bold"
-            >
-              {(["letters", "words"] as const).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  role="radio"
-                  aria-checked={aslMode === m}
-                  onClick={() => {
-                    setAslMode(m);
-                    signFramesRef.current = [];
-                    pendingCountRef.current = 0;
-                    committedLetterRef.current = "";
-                    setWordHint(null);
-                  }}
-                  className={`rounded-full px-3 py-1 transition-all ${aslMode === m ? "grad-purple text-white" : "text-white/60"}`}
-                >
-                  {t(`live.${m}`)}
-                </button>
-              ))}
-            </div>
-          )}
-          {usingAslWords && holisticLoading && (
-            <div className="relative mt-2 text-[11px] text-white/60">
-              {t("live.loadingHolistic")}
-            </div>
-          )}
           {wordHint && (
             <div
               role="status"
@@ -715,15 +593,6 @@ export function CameraScreen() {
             >
               <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-300" />
               {t("live.cameraDenied")}
-            </div>
-          )}
-          {aslUnavailable && (
-            <div
-              role="status"
-              className="relative mt-2 flex items-center gap-2 rounded-xl border border-amber-400/40 bg-amber-500/15 px-3 py-2 text-[11px] text-amber-100"
-            >
-              <AlertCircle className="h-3.5 w-3.5 shrink-0 text-amber-300" />
-              {usingAslWords ? t("signLang.aslWordsNotReady") : t("signLang.aslNotReady")}
             </div>
           )}
 
@@ -748,13 +617,7 @@ export function CameraScreen() {
               <div className="absolute inset-0 grid place-items-center text-center text-xs text-white/50">
                 <div>
                   <Camera className="mx-auto mb-2 h-8 w-8 text-white/30" strokeWidth={1.4} />
-                  {signLang === "asl"
-                    ? aslMode === "words"
-                      ? t("live.hintAslWords")
-                      : t("live.hintAsl")
-                    : arslMode === "phrases"
-                      ? t("live.hintPhrases")
-                      : t("live.hintArsl")}
+                  {t("live.hintAny")}
                 </div>
               </div>
             )}
@@ -770,6 +633,15 @@ export function CameraScreen() {
                 className="absolute start-3 top-3 max-w-[60%] truncate rounded-2xl grad-purple px-4 py-2 text-2xl font-black shadow-glow"
               >
                 {partialWord}
+              </div>
+            )}
+            {isDetecting && tip && (
+              <div
+                role="status"
+                className="absolute inset-x-3 bottom-14 mx-auto flex w-fit items-center gap-1.5 rounded-full border border-amber-300/50 bg-amber-500/85 px-3 py-1.5 text-[12px] font-bold text-white shadow-glow backdrop-blur"
+              >
+                <Lightbulb className="h-3.5 w-3.5" />
+                {t(`tip.${tip}`)}
               </div>
             )}
             {askConsent && (
@@ -818,11 +690,7 @@ export function CameraScreen() {
               ))
             ) : (
               <span className="text-[11px] text-white/45">
-                {usingAslWords
-                  ? t("live.idleHintWords")
-                  : isDetecting
-                    ? t("live.spellHint")
-                    : t("live.idleHint")}
+                {isDetecting ? t("live.spellHint") : t("live.idleHint")}
               </span>
             )}
           </div>

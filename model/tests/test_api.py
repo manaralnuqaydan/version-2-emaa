@@ -69,3 +69,15 @@ def test_asl_word_names_are_readable():
     assert api.word_name('THANKYOU') == 'thank you'
     assert api.word_name('BEE1') == 'bee'
     assert api.word_name('HELLO') == 'hello'
+
+
+def test_hand_motion_separates_held_hand_from_moving_sign():
+    import api
+
+    held = np.zeros((32, 153), np.float32)
+    held[:, 3:9] = [[-1, 0, 0, 1, 0, 0]]  # الكتفين
+    held[:, 27:30] = [0.2, 0.5, 0]  # رسغ اليد اليمنى ثابت
+    moving = held.copy()
+    moving[:, 27] = np.linspace(-0.5, 0.5, 32)
+    assert api.hand_motion(held) < 0.05
+    assert api.hand_motion(moving) > 0.5

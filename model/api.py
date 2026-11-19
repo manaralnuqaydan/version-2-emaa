@@ -70,6 +70,21 @@ def word_name(label):
     return WORD_NAMES.get(label, label.rstrip('0123456789').lower())
 
 
+def hand_motion(norm):
+    """كم تحركت اليد خلال الإشارة (نسبة لعرض الكتفين). كلمات ASL فيها حركة، والحرف العربي يد ثابتة.
+    نستخدم مدى الحركة بين النسبة 5% و95% عشان اهتزاز الكاميرا ما يحسب حركة."""
+    pts = norm.reshape(len(norm), -1, 3)
+    n_pose = pts.shape[1] - 42
+    best = 0.0
+    for start in (n_pose, n_pose + 21):
+        wrist = pts[:, start, :2]
+        ok = np.abs(wrist).sum(axis=1) > 0
+        if ok.sum() >= 4:
+            spread = np.percentile(wrist[ok], 95, axis=0) - np.percentile(wrist[ok], 5, axis=0)
+            best = max(best, float(np.linalg.norm(spread)))
+    return best
+
+
 class ImageInput(BaseModel):
     image: str  # صورة اليد المقصوصة كـ data URL أو base64
 
@@ -138,10 +153,12 @@ def predict_asl_word(data: SequenceInput):
     seq = np.array(data.frames, dtype=np.float32)
     if seq.shape != (FRAMES, FEATURES):
         return {"prediction": "", "confidence": 0, "top": []}
-    asl_words_net.setInput(normalize_sequence(seq)[None])
+    norm = normalize_sequence(seq)
+    asl_words_net.setInput(norm[None])
     prob = asl_words_net.forward()[0]
     top = np.argsort(prob)[::-1][:3]
     return {"prediction": word_name(asl_words_classes[int(top[0])]), "confidence": float(prob[top[0]]) * 100,
+            "motion": hand_motion(norm),
             "top": [{"word": word_name(asl_words_classes[int(i)]), "confidence": float(prob[i]) * 100}
                     for i in top]}
 

@@ -2,7 +2,6 @@ import { ArrowLeft, Camera, MessageCircle, Type, Video } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import avatarSaudi from "@/assets/avatar-saudi.png";
 import { useI18n } from "@/lib/i18n";
-import { SignLanguagePicker } from "@/components/LanguageControls";
 import { AppShell } from "@/components/layout/AppShell";
 
 export function ModeScreen() {
@@ -13,14 +12,6 @@ export function ModeScreen() {
         <div className="text-center animate-fade-up">
           <h1 className="text-3xl font-black tracking-tight sm:text-4xl">{t("modes.title")}</h1>
           <p className="mt-2 text-[14px] text-white/60">{t("modes.subtitle")}</p>
-        </div>
-
-        <div className="mx-auto mt-7 w-full max-w-md animate-fade-up [animation-delay:100ms]">
-          <div className="mb-2 text-center text-[12px] font-bold text-white/70">
-            {t("signLang.label")}
-          </div>
-          <SignLanguagePicker dark />
-          <p className="mt-2 text-center text-[11px] text-white/45">{t("signLang.chooseHint")}</p>
         </div>
 
         <div className="mt-9 grid gap-5 md:grid-cols-2">

@@ -1,7 +1,6 @@
 import { ArrowLeft, Camera, Hand, Type } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
-import { SignLanguagePicker } from "@/components/LanguageControls";
 import { AppShell } from "@/components/layout/AppShell";
 import { BrandMark } from "@/components/Brand";
 
@@ -65,11 +64,6 @@ export function HomeScreen() {
                 <ArrowLeft className="h-5 w-5 shrink-0 text-white/70 transition-transform ltr:-scale-x-100 group-hover:rtl:-translate-x-0.5 group-hover:ltr:translate-x-0.5" />
               </Link>
             ))}
-          </div>
-
-          <div className="mt-6 flex items-center gap-2 animate-fade-up [animation-delay:240ms]">
-            <span className="text-[13px] text-white/55">{t("home2.signHint")}</span>
-            <SignLanguagePicker compact dark />
           </div>
         </div>
 

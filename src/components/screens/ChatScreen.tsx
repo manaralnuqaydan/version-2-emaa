@@ -4,7 +4,6 @@ import AvatarViewer from "../ui/AvatarViewer";
 import SpellCaption from "../ui/SpellCaption";
 import ProactiveAlert from "../ui/ProactiveAlert";
 import { useI18n, type SignLang } from "@/lib/i18n";
-import { SignLanguagePicker } from "@/components/LanguageControls";
 import { AppShell } from "@/components/layout/AppShell";
 import { controlSpelling, hasStruggleWord, spellOnAvatar, wrongScript } from "@/lib/avatar";
 
@@ -51,7 +50,7 @@ export function ChatScreen() {
   };
 
   return (
-    <AppShell fullHeight actions={<SignLanguagePicker compact dark />}>
+    <AppShell fullHeight>
       <div className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-4 pt-4 pb-4 sm:px-6 lg:min-h-0 lg:flex-row lg:items-stretch lg:gap-5 lg:pt-5">
         {/* الأفاتار */}
         <div className="relative flex min-h-[340px] flex-col overflow-hidden rounded-[28px] surface lg:min-h-0 lg:flex-[1.1]">
