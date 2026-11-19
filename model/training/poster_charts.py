@@ -54,7 +54,7 @@ def compare_chart(rows, title, xlabel, path):
     ax.set_xlabel(xlabel)
     ax.grid(axis='x', color=GRID, linewidth=0.8)
     ax.set_axisbelow(True)
-    ax.legend(loc='lower right', frameon=False, fontsize=10)
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.16 - 0.5 / len(rows)), ncol=2, frameon=False, fontsize=10)
     ax.set_title(title, loc='left', color=INK, fontweight='bold')
     fig.tight_layout()
     fig.savefig(path)
@@ -134,7 +134,7 @@ for name, clf in [('Random Forest (pixels)', RandomForestClassifier(300, n_jobs=
     print(ar_rows[-1], flush=True)
 summary['arabic_letters'] = {'dataset': 'ArASL (54,049 images, 32 letters)', 'split': 'random 80/20 (same signers can appear in train and test)', 'models': ar_rows}
 compare_chart(ar_rows, 'Arabic letters (ArASL, 32 signs): accuracy by model',
-              f'% on {len(y_te):,} test images', f'{OUT}/arabic_letters_accuracy.png')
+              f'% on {len(y_te):,} test images (random 20% split of ArASL)', f'{OUT}/arabic_letters_accuracy.png')
 cm = confusion_matrix(y_te, pred)
 per_class_chart(cm, classes, 'Arabic letters: accuracy per letter (ours)', f'{OUT}/arabic_letters_per_letter.png')
 confusion_chart(cm, classes, 'Arabic letters: confusion matrix (ours)', f'{OUT}/arabic_letters_confusion.png', 10)
@@ -146,7 +146,7 @@ if os.path.exists('results/asl_letters_camera.json'):  # الموديل اللي
     en_rows.append(json.load(open('results/asl_letters_camera.json')))
 summary['english_letters'] = {'dataset': 'ASL Alphabet (hand landmarks)', 'models': en_rows}
 compare_chart(en_rows, 'English letters (ASL Alphabet): accuracy by model',
-              f'% on {en_rows[0]["test_images"]} test hands', f'{OUT}/english_letters_accuracy.png')
+              '% on a random 20% test split of ASL Alphabet hands', f'{OUT}/english_letters_accuracy.png')
 
 # 3) الكلمات الإنجليزية: النتائج المحفوظة + رقم التصويت الجديد
 words = {'cnn': json.load(open('training/results/asl_words_summary.json')),

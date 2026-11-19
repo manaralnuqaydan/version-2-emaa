@@ -9,7 +9,7 @@
     "precision_macro": 0.9739928542879658,
     "recall_macro": 0.9738744530648689,
     "f1_macro": 0.9737008359445491,
-    "latency_ms": 2.1201556750076107,
+    "latency_ms": 2.126076682423354,
     "test_images": 10810
    },
    {
@@ -18,7 +18,7 @@
     "precision_macro": 0.9493889635555224,
     "recall_macro": 0.9481555260898193,
     "f1_macro": 0.9486230943738349,
-    "train_time_min": 0.4341601888338725
+    "train_time_min": 0.43509482145309447
    },
    {
     "name": "Logistic Regression (pixels)",
@@ -26,7 +26,7 @@
     "precision_macro": 0.40710084967014676,
     "recall_macro": 0.4082964936347905,
     "f1_macro": 0.4057554814525349,
-    "train_time_min": 0.6239394942919413
+    "train_time_min": 0.599087138970693
    }
   ]
  },
