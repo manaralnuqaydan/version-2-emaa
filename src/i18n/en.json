@@ -76,6 +76,7 @@
     "stop": "Stop",
     "spellHint": "Spell the word letter by letter, then lower your hand for a second to end the word",
     "idleHint": "Recognises letters and groups them into words",
+    "idleHintWords": "Recognises whole signed words and builds a sentence",
     "signText": "Sign translation",
     "endWord": "End word",
     "deleteLetter": "Delete letter",
@@ -146,9 +147,6 @@
   "alert": {
     "struggle": "Looks like something wasn't clear. Want the avatar to repeat it slower?",
     "slower": "Replay slower",
-    "wrongLangAr": "This text is in Arabic but ASL is selected. Switch to Arabic sign language?",
-    "wrongLangEn": "This text is in English but Arabic sign language is selected. Switch to ASL?",
-    "switch": "Switch",
     "lowConfidence": "The model isn't sure about the sign. Move your hand closer to the camera and use better lighting.",
     "partnerStruggle": "Looks like something is hard to understand. Want the avatar to repeat the reply slowly?"
   }

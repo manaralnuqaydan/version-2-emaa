@@ -60,3 +60,12 @@ def test_no_chatbot_endpoint():
     # emaa يترجم من الداتاسيت والموديلات المحلية بس، بدون أي مساعد خارجي
     assert client.post('/chat', json={'messages': []}).status_code in (404, 405)
     assert 'chatbot' not in client.get('/').json()
+
+
+def test_asl_word_names_are_readable():
+    import api
+
+    assert api.word_name('W.H.A.T') == 'what'
+    assert api.word_name('THANKYOU') == 'thank you'
+    assert api.word_name('BEE1') == 'bee'
+    assert api.word_name('HELLO') == 'hello'

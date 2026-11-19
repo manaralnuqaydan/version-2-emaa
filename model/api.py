@@ -52,10 +52,22 @@ if os.path.exists('phrases_model.pkl'):
 # موديل كلمات ASL (تسلسل نقاط Holistic) من asl_words_train.py، إذا كان موجود
 asl_words_net, asl_words_classes = None, []
 if os.path.exists('asl_words.onnx'):
+    import sys
+
+    sys.path.insert(0, 'training')  # asl_words_features.py موجود في training/
     from asl_words_features import FEATURES, FRAMES, normalize_sequence
     asl_words_net = cv2.dnn.readNetFromONNX('asl_words.onnx')
     with open('asl_words_classes.json', encoding='utf-8') as f:
         asl_words_classes = json.load(f)
+
+
+# أسماء ASL Citizen فيها أرقام وصيغ خاصة (BEE1، W.H.A.T، THANKYOU)، نعرضها ككلمات عادية
+WORD_NAMES = {'W.H.A.T': 'what', 'THANKYOU': 'thank you', 'DONTKNOW': "don't know",
+              'WHATFOR1': 'what for', 'ROCKINGCHAIR1': 'rocking chair'}
+
+
+def word_name(label):
+    return WORD_NAMES.get(label, label.rstrip('0123456789').lower())
 
 
 class ImageInput(BaseModel):
@@ -129,8 +141,9 @@ def predict_asl_word(data: SequenceInput):
     asl_words_net.setInput(normalize_sequence(seq)[None])
     prob = asl_words_net.forward()[0]
     top = np.argsort(prob)[::-1][:3]
-    return {"prediction": asl_words_classes[int(top[0])], "confidence": float(prob[top[0]]) * 100,
-            "top": [{"word": asl_words_classes[int(i)], "confidence": float(prob[i]) * 100} for i in top]}
+    return {"prediction": word_name(asl_words_classes[int(top[0])]), "confidence": float(prob[top[0]]) * 100,
+            "top": [{"word": word_name(asl_words_classes[int(i)]), "confidence": float(prob[i]) * 100}
+                    for i in top]}
 
 
 @app.get("/")

@@ -9,7 +9,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { controlSpelling, hasStruggleWord, spellOnAvatar, wrongScript } from "@/lib/avatar";
 
 type Item = { text: string; signLang: SignLang };
-type Alert = { kind: "struggle" } | { kind: "wrongLang"; to: SignLang } | null;
+type Alert = { kind: "struggle" } | null;
 
 // نص ← إشارة: اللي تكتبه يتأشّر مباشرة بأشكال اليد من الداتاسيت (بدون أي مساعد خارجي)
 export function ChatScreen() {
@@ -32,16 +32,13 @@ export function ChatScreen() {
     const text = raw.trim();
     if (!text) return;
     setInputText("");
-    // رصد استباقي (مكتوب فقط): لغة النص غير لغة الإشارة، أو كلمات تدل على صعوبة
-    const other = wrongScript(text, signLang);
-    if (other) {
-      setAlert({ kind: "wrongLang", to: other });
-      setInputText(text);
-      return;
-    }
+    // يفهم العربي والإنجليزي: لغة الكتابة تحدد لغة الإشارة تلقائيًا (عربي ← ArSL، إنجليزي ← ASL)
+    const lang = wrongScript(text, signLang) ?? signLang;
+    if (lang !== signLang) setSignLang(lang);
+    // رصد استباقي (مكتوب فقط): كلمات تدل على صعوبة
     setAlert(hasStruggleWord(text) ? { kind: "struggle" } : null);
-    setItems((list) => [...list, { text, signLang }]);
-    sign(text);
+    setItems((list) => [...list, { text, signLang: lang }]);
+    sign(text, lang);
   };
 
   const replaySlower = () => {
@@ -51,17 +48,6 @@ export function ChatScreen() {
       controlSpelling({ cmd: "speed", value: 0.5 });
     }
     setAlert(null);
-  };
-
-  const switchLang = (to: SignLang) => {
-    setSignLang(to);
-    setAlert(null);
-    const text = inputText.trim();
-    if (text) {
-      setInputText("");
-      setItems((list) => [...list, { text, signLang: to }]);
-      sign(text, to);
-    }
   };
 
   return (
@@ -111,19 +97,11 @@ export function ChatScreen() {
 
           {alert && (
             <div className="mt-3">
-              {alert.kind === "struggle" ? (
-                <ProactiveAlert
-                  message={t("alert.struggle")}
-                  action={{ label: t("alert.slower"), onClick: replaySlower }}
-                  onClose={() => setAlert(null)}
-                />
-              ) : (
-                <ProactiveAlert
-                  message={t(alert.to === "arsl" ? "alert.wrongLangAr" : "alert.wrongLangEn")}
-                  action={{ label: t("alert.switch"), onClick: () => switchLang(alert.to) }}
-                  onClose={() => setAlert(null)}
-                />
-              )}
+              <ProactiveAlert
+                message={t("alert.struggle")}
+                action={{ label: t("alert.slower"), onClick: replaySlower }}
+                onClose={() => setAlert(null)}
+              />
             </div>
           )}
 

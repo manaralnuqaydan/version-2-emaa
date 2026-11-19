@@ -52,5 +52,10 @@ model/ASL_Citizen*.zip
 
 # Datasets and local training environments (never commit: licence)
 *.npz
+# Models trained on ASL Citizen stay on the local machine (licence: no redistribution)
+model/asl_words.onnx
+model/asl_words_classes.json
+model/training/asl_words.onnx
+model/training/asl_words_classes.json
 model/training/.venv-mp/
 model/training/asl_citizen_cache/

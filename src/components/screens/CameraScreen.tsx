@@ -145,6 +145,8 @@ export function CameraScreen() {
       .then((res) => res.json())
       .then((data) => {
         setApiStatus(data.models ?? null);
+        // ما عندنا حروف ASL بس عندنا كلمات: نبدأ بالكلمات
+        if (data.models?.asl_words && !data.models?.asl_letters) setAslMode("words");
       })
       .catch(() => setApiStatus(null));
   }, []);
@@ -816,7 +818,11 @@ export function CameraScreen() {
               ))
             ) : (
               <span className="text-[11px] text-white/45">
-                {isDetecting ? t("live.spellHint") : t("live.idleHint")}
+                {usingAslWords
+                  ? t("live.idleHintWords")
+                  : isDetecting
+                    ? t("live.spellHint")
+                    : t("live.idleHint")}
               </span>
             )}
           </div>
