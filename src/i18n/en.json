@@ -49,7 +49,7 @@
     "subtitle": "Each mode is designed for a different way to communicate",
     "first": "Mode 1",
     "chatTitle": "Chat with the emaa assistant",
-    "chatDesc": "Type your sentence and the avatar signs it using the dataset",
+    "chatDesc": "Type any sentence and the avatar signs it",
     "start": "Start now",
     "second": "Mode 2",
     "liveTitle": "Instant sign to text",
@@ -140,7 +140,7 @@
     "goTextD": "Sign to the camera and see it as text"
   },
   "t2s": {
-    "empty": "Type any sentence and the avatar signs it using the dataset.",
+    "empty": "Type any sentence",
     "replay": "Replay signing"
   },
   "alert": {
