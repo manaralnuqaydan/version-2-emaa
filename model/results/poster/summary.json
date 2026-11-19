@@ -9,7 +9,7 @@
     "precision_macro": 0.9739928542879658,
     "recall_macro": 0.9738744530648689,
     "f1_macro": 0.9737008359445491,
-    "latency_ms": 2.1449652123958503,
+    "latency_ms": 2.1201556750076107,
     "test_images": 10810
    },
    {
@@ -18,7 +18,7 @@
     "precision_macro": 0.9493889635555224,
     "recall_macro": 0.9481555260898193,
     "f1_macro": 0.9486230943738349,
-    "train_time_min": 0.432835320631663
+    "train_time_min": 0.4341601888338725
    },
    {
     "name": "Logistic Regression (pixels)",
@@ -26,7 +26,7 @@
     "precision_macro": 0.40710084967014676,
     "recall_macro": 0.4082964936347905,
     "f1_macro": 0.4057554814525349,
-    "train_time_min": 0.6187073032061259
+    "train_time_min": 0.6239394942919413
    }
   ]
  },
@@ -60,7 +60,7 @@
     "test_images": 609
    },
    {
-    "name": "Landmarks + MLP (ours)",
+    "name": "Landmarks + MLP",
     "accuracy": 0.993431855500821,
     "precision_macro": 0.9935119047619049,
     "recall_macro": 0.9937182382834556,
@@ -71,6 +71,43 @@
     "params": 54044,
     "train_time_min": 0.13713372945785524,
     "test_images": 609
+   },
+   {
+    "name": "2D landmarks + MLP (camera, ours)",
+    "accuracy": 0.9929453262786596,
+    "precision_macro": 0.9921536796536797,
+    "recall_macro": 0.9872149589540894,
+    "f1_macro": 0.9891713093840753,
+    "test_images": 567,
+    "classes": [
+     "A",
+     "B",
+     "C",
+     "D",
+     "E",
+     "F",
+     "G",
+     "H",
+     "I",
+     "J",
+     "K",
+     "L",
+     "M",
+     "N",
+     "O",
+     "P",
+     "Q",
+     "R",
+     "S",
+     "T",
+     "U",
+     "V",
+     "W",
+     "X",
+     "Y",
+     "Z"
+    ],
+    "train_time_min": 0.6755984663963318
    }
   ]
  },

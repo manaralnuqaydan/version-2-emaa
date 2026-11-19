@@ -118,6 +118,36 @@ def predict_asl(data: LandmarksInput):
     return {"prediction": asl_classes[best], "confidence": float(probabilities[best]) * 100}
 
 
+# حروف ASL للكاميرا الموحدة: نقاط اليد من Holistic بإحداثيات الصورة (x, y) من asl_letters_camera.py
+asl_cam_net, asl_cam_classes = None, []
+if os.path.exists('asl_letters_camera.onnx'):
+    asl_cam_net = cv2.dnn.readNetFromONNX('asl_letters_camera.onnx')
+    with open('asl_letters_camera_classes.json', encoding='utf-8') as f:
+        asl_cam_classes = json.load(f)
+
+
+class HandImageInput(BaseModel):
+    landmarks: list[list[float]]  # 21 نقطة (x, y) بإحداثيات الصورة من 0 لـ 1
+    aspect: float = 4 / 3  # عرض الفيديو ÷ طوله
+    hand: str = "right"  # يد الشخص (Holistic: rightHandLandmarks = يده اليمنى)
+
+
+@app.post("/predict-asl-letter")
+def predict_asl_letter(data: HandImageInput):
+    if asl_cam_net is None or len(data.landmarks) != 21:
+        return {"prediction": "", "confidence": 0}
+    pts = np.array([p[:2] for p in data.landmarks], dtype=np.float32) * np.array([data.aspect, 1], np.float32)
+    # صور التدريب كلها بشكل اليد اليسرى في صورة غير معكوسة (MediaPipe يفترض صورة سيلفي)، فنقلب اليمنى
+    if data.hand == "right":
+        pts[:, 0] *= -1
+    pts = pts - pts[0]
+    pts = pts / (np.linalg.norm(pts[9]) + 1e-9)
+    asl_cam_net.setInput(pts.reshape(1, 42))
+    prob = asl_cam_net.forward()[0]
+    best = int(prob.argmax())
+    return {"prediction": asl_cam_classes[best], "confidence": float(prob[best]) * 100}
+
+
 class PhraseInput(BaseModel):
     landmarks: list[list[float]]  # 21 نقطة (x, y, z) بإحداثيات الصورة من MediaPipe
 
@@ -163,5 +193,5 @@ def root():
     return {
         "status": "EEMAA API running ✅",
         "models": {"arsl_letters": True, "arsl_phrases": phrase_model is not None,
-                   "asl_letters": asl_net is not None, "asl_words": asl_words_net is not None},
+                   "asl_letters": asl_net is not None, "asl_letters_camera": asl_cam_net is not None, "asl_words": asl_words_net is not None},
     }

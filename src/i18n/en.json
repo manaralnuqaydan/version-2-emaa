@@ -75,7 +75,7 @@
     "start": "Start detection",
     "stop": "Stop",
     "spellHint": "Sign, then lower your hand for a second when the word is done",
-    "idleHint": "Arabic letters or English words, recognised automatically",
+    "idleHint": "English letters and words. Switch to العربية above for Arabic letters",
     "idleHintWords": "Recognises whole signed words and builds a sentence",
     "signText": "Sign translation",
     "endWord": "End word",

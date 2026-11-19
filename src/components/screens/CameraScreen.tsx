@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import CameraConsent, { hasCameraConsent } from "@/components/ui/CameraConsent";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type SignLang } from "@/lib/i18n";
 import { AppShell } from "@/components/layout/AppShell";
 import ProactiveAlert from "@/components/ui/ProactiveAlert";
 import { drawLandmarks } from "@/lib/drawLandmarks";
@@ -78,7 +78,10 @@ const proactiveKeywords = [
 type ApiStatus = { asl_words?: boolean } | null;
 
 export function CameraScreen() {
-  const { t, signLang, setSignLang } = useI18n();
+  const { t, lang, signLang, setSignLang } = useI18n();
+  // زر اللغة يحدد الحروف الثابتة: العربية ← حروف ArSL، English ← حروف ASL (الكلمات الإنجليزية بحركة تنقرأ دائمًا)
+  const langRef = useRef(lang);
+  langRef.current = lang;
   const [signTranslation, setSignTranslation] = useState("");
   const [isDetecting, setIsDetecting] = useState(false);
   const [handVisible, setHandVisible] = useState(false);
@@ -226,8 +229,11 @@ export function CameraScreen() {
       lastHandsAtRef.current = now;
       if (requestInFlight.current || now - lastPredictTime.current < PREDICT_INTERVAL_MS) return;
       lastPredictTime.current = now;
-      const image = cropHand(hand);
-      if (image) sendImageToAPI(image);
+      if (langRef.current === "en") sendLetterPoints(hand, r.rightHandLandmarks ? "right" : "left");
+      else {
+        const image = cropHand(hand);
+        if (image) sendImageToAPI(image);
+      }
       return;
     }
     const frames = signFramesRef.current;
@@ -364,7 +370,33 @@ export function CameraScreen() {
     }
   };
 
-  const handlePrediction = (letter: string, conf: number) => {
+  // حرف ASL من نقاط اليد نفسها (بدون صورة)، والموديل يعرف أي يد عشان شكلها يطابق التدريب
+  const sendLetterPoints = async (hand: Landmark[], side: "right" | "left") => {
+    const video = videoRef.current;
+    requestInFlight.current = true;
+    try {
+      const res = await fetch(`${SIGN_API_URL}/predict-asl-letter`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          landmarks: hand.map((p) => [p.x, p.y]),
+          aspect: video?.videoWidth ? video.videoWidth / video.videoHeight : 4 / 3,
+          hand: side,
+        }),
+      });
+      const data = await res.json();
+      setApiError(false);
+      if (/^[A-Z]$/.test(data.prediction))
+        handlePrediction(data.prediction.toLowerCase(), data.confidence ?? 0, "asl");
+    } catch (err) {
+      setApiError(true);
+      console.error("خطأ في الاتصال بالـ API:", err);
+    } finally {
+      requestInFlight.current = false;
+    }
+  };
+
+  const handlePrediction = (letter: string, conf: number, letterLang: SignLang = "arsl") => {
     setConfidence(conf);
 
     // فلتر التردد: تكرار الثقة المنخفضة يفعّل الإرشاد الاستباقي
@@ -383,7 +415,7 @@ export function CameraScreen() {
     committedLetterRef.current = letter;
     retryCountRef.current = 0;
     segmentLettersRef.current += 1;
-    if (signLang !== "arsl") setSignLang("arsl");
+    if (signLang !== letterLang) setSignLang(letterLang);
     setWord(wordRef.current + letter);
     checkProactiveContext(wordRef.current);
   };

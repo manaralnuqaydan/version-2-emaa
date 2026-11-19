@@ -19,7 +19,7 @@ def png_b64(img):
 
 def test_root_reports_real_model_status():
     body = client.get('/').json()
-    assert set(body['models']) == {'arsl_letters', 'arsl_phrases', 'asl_letters', 'asl_words'}
+    assert set(body['models']) == {'arsl_letters', 'arsl_phrases', 'asl_letters', 'asl_letters_camera', 'asl_words'}
     assert body['models']['arsl_letters'] is True
     # الحالة لازم تطابق الملفات الموجودة فعلًا، ما ندّعي موديل غير موجود
     assert body['models']['asl_words'] == (api.asl_words_net is not None)
@@ -81,3 +81,19 @@ def test_hand_motion_separates_held_hand_from_moving_sign():
     moving[:, 27] = np.linspace(-0.5, 0.5, 32)
     assert api.hand_motion(held) < 0.05
     assert api.hand_motion(moving) > 0.5
+
+
+def test_asl_letter_from_camera_points_reads_either_hand():
+    if api.asl_cam_net is None:
+        return
+    # يد مفتوحة (B): الأصابع لفوق والإبهام مطوي على الكف
+    import numpy as np
+    pts = np.zeros((21, 2))
+    pts[1:5] = [[0.05, -0.05], [0.08, -0.1], [0.06, -0.15], [0.03, -0.18]]
+    for f, x in enumerate([0.06, 0.02, -0.02, -0.06]):
+        for j in range(4):
+            pts[5 + 4 * f + j] = [x, -0.15 - 0.07 * j]
+    # نفس اليد: اليسرى كما هي، واليمنى مرآتها
+    a = client.post('/predict-asl-letter', json={'landmarks': (pts + 0.5).tolist(), 'aspect': 1, 'hand': 'left'}).json()
+    b = client.post('/predict-asl-letter', json={'landmarks': (pts * [-1, 1] + 0.5).tolist(), 'aspect': 1, 'hand': 'right'}).json()
+    assert a['prediction'] == b['prediction'] and a['prediction'] in api.asl_cam_classes

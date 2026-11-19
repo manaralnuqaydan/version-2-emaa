@@ -141,7 +141,9 @@ confusion_chart(cm, classes, 'Arabic letters: confusion matrix (ours)', f'{OUT}/
 
 # 2) الحروف الإنجليزية
 en = json.load(open('results/asl_summary.json'))
-en_rows = list(en.values())
+en_rows = [r for r in en.values() if 'ours' not in r['name']] + [{**r, 'name': r['name'].replace(' (ours)', '')} for r in en.values() if 'ours' in r['name']]
+if os.path.exists('results/asl_letters_camera.json'):  # الموديل اللي تستخدمه الكاميرا (نقاط x, y فقط)
+    en_rows.append(json.load(open('results/asl_letters_camera.json')))
 summary['english_letters'] = {'dataset': 'ASL Alphabet (hand landmarks)', 'models': en_rows}
 compare_chart(en_rows, 'English letters (ASL Alphabet): accuracy by model',
               f'% on {en_rows[0]["test_images"]} test hands', f'{OUT}/english_letters_accuracy.png')
