@@ -67,6 +67,10 @@ from sklearn.svm import SVC  # noqa: E402
 
 data = np.load('asl_landmarks.npz')
 x, y, classes = data['x'], data['y'], list(data['classes'])
+# صنف ما انكشفت فيه يد (مثل nothing) نشيله ونعيد ترقيم الباقي
+keep = [c for c in range(len(classes)) if (y == c).any()]
+classes = [str(classes[c]) for c in keep]
+y = np.searchsorted(keep, y)
 flat = x.reshape(len(x), -1)
 x_train, x_test, y_train, y_test = train_test_split(flat, y, test_size=0.2, random_state=SEED, stratify=y)
 x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1, random_state=SEED, stratify=y_train)

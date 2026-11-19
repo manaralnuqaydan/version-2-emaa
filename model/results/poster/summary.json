@@ -1,0 +1,164 @@
+{
+ "arabic_letters": {
+  "dataset": "ArASL (54,049 images, 32 letters)",
+  "split": "random 80/20 (same signers can appear in train and test)",
+  "models": [
+   {
+    "name": "CNN + mirror (ours)",
+    "accuracy": 0.9738205365402405,
+    "precision_macro": 0.9739928542879658,
+    "recall_macro": 0.9738744530648689,
+    "f1_macro": 0.9737008359445491,
+    "latency_ms": 2.1449652123958503,
+    "test_images": 10810
+   },
+   {
+    "name": "Random Forest (pixels)",
+    "accuracy": 0.9486586493987049,
+    "precision_macro": 0.9493889635555224,
+    "recall_macro": 0.9481555260898193,
+    "f1_macro": 0.9486230943738349,
+    "train_time_min": 0.432835320631663
+   },
+   {
+    "name": "Logistic Regression (pixels)",
+    "accuracy": 0.40564292321924145,
+    "precision_macro": 0.40710084967014676,
+    "recall_macro": 0.4082964936347905,
+    "f1_macro": 0.4057554814525349,
+    "train_time_min": 0.6187073032061259
+   }
+  ]
+ },
+ "english_letters": {
+  "dataset": "ASL Alphabet (hand landmarks)",
+  "models": [
+   {
+    "name": "Landmarks + SVM (RBF)",
+    "accuracy": 0.9967159277504105,
+    "precision_macro": 0.9970238095238095,
+    "recall_macro": 0.9968238283455674,
+    "f1_macro": 0.9968560275833902,
+    "top3_accuracy": 0.9983579638752053,
+    "latency_ms": 0.1575171947479248,
+    "size_mb": 0.419357,
+    "params": 35154,
+    "train_time_min": 0.005363186200459798,
+    "test_images": 609
+   },
+   {
+    "name": "Landmarks + Random Forest",
+    "accuracy": 0.993431855500821,
+    "precision_macro": 0.9897023809523811,
+    "recall_macro": 0.9924531989749381,
+    "f1_macro": 0.9906522905959435,
+    "top3_accuracy": 0.9967159277504105,
+    "latency_ms": 75.15604972839355,
+    "size_mb": 16.628744,
+    "params": 57194,
+    "train_time_min": 0.017033755779266357,
+    "test_images": 609
+   },
+   {
+    "name": "Landmarks + MLP (ours)",
+    "accuracy": 0.993431855500821,
+    "precision_macro": 0.9935119047619049,
+    "recall_macro": 0.9937182382834556,
+    "f1_macro": 0.9933839671575855,
+    "top3_accuracy": 0.9983579638752053,
+    "latency_ms": 1.0963916778564453,
+    "size_mb": 0.688873,
+    "params": 54044,
+    "train_time_min": 0.13713372945785524,
+    "test_images": 609
+   }
+  ]
+ },
+ "english_words": {
+  "dataset": "ASL Citizen (100 words, 1290 test videos, 11 unseen signers)",
+  "models": [
+   {
+    "name": "1D-CNN single",
+    "dataset": "ASL Citizen (subset)",
+    "classes": 100,
+    "test_videos": 1290,
+    "test_signers": 11,
+    "signer_independent": true,
+    "accuracy": 0.8550387596899225,
+    "top5_accuracy": 0.9689922480620154,
+    "precision_macro": 0.8609184955910962,
+    "recall_macro": 0.8540322128851539,
+    "f1_macro": 0.8523257392080885,
+    "val_accuracy": 0.8700265288352966,
+    "latency_ms": 5.588569641113281,
+    "params": 730148,
+    "train_time_min": 2.472680366039276
+   },
+   {
+    "name": "Logistic Regression",
+    "accuracy": 0.6713178294573643,
+    "top5_accuracy": 0.8953488372093024,
+    "precision_macro": 0.7257790111299837,
+    "recall_macro": 0.6700923178129061,
+    "f1_macro": 0.6789966740693031,
+    "latency_ms": 3.4970641136169434,
+    "size_mb": 0.39157,
+    "params": null,
+    "train_time_min": 0.5931549390157064
+   },
+   {
+    "name": "k-NN (k=5)",
+    "accuracy": 0.47674418604651164,
+    "top5_accuracy": 0.7387596899224806,
+    "precision_macro": 0.5280991650678183,
+    "recall_macro": 0.47518418591212713,
+    "f1_macro": 0.4739766351129383,
+    "latency_ms": 5.549328327178955,
+    "size_mb": 11.380426,
+    "params": null,
+    "train_time_min": 0.0004375576972961426
+   },
+   {
+    "name": "Random Forest",
+    "accuracy": 0.6782945736434108,
+    "top5_accuracy": 0.8992248062015504,
+    "precision_macro": 0.6999356756840774,
+    "recall_macro": 0.6757992620124973,
+    "f1_macro": 0.6749206481010193,
+    "latency_ms": 110.70995807647705,
+    "size_mb": 823.600373,
+    "params": null,
+    "train_time_min": 0.21954139868418376
+   },
+   {
+    "name": "SVM (RBF)",
+    "accuracy": 0.6224806201550388,
+    "top5_accuracy": 0.8705426356589148,
+    "precision_macro": 0.6713966789123834,
+    "recall_macro": 0.6203580071888894,
+    "f1_macro": 0.6242530519512135,
+    "latency_ms": 5.421230792999268,
+    "size_mb": 25.144796,
+    "params": null,
+    "train_time_min": 0.266791824499766
+   },
+   {
+    "name": "BiGRU (sequence)",
+    "accuracy": 0.7713178294573644,
+    "top5_accuracy": 0.9395348837209302,
+    "precision_macro": 0.7808102573381211,
+    "recall_macro": 0.7713482016349664,
+    "f1_macro": 0.7689191754144278,
+    "latency_ms": 9.048285484313965,
+    "size_mb": 2.157968,
+    "params": 539492,
+    "train_time_min": 2.8448890328407286
+   },
+   {
+    "name": "5x 1D-CNN + mirror (ours)",
+    "accuracy": 0.8635658914728682,
+    "f1_macro": 0.8613001919008686
+   }
+  ]
+ }
+}

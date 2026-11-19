@@ -4,6 +4,7 @@ import AvatarViewer from "../ui/AvatarViewer";
 import SpellCaption from "../ui/SpellCaption";
 import ProactiveAlert from "../ui/ProactiveAlert";
 import { useI18n, type SignLang } from "@/lib/i18n";
+import type { SpellState } from "../ui/AvatarViewer";
 import { AppShell } from "@/components/layout/AppShell";
 import { controlSpelling, hasStruggleWord, spellOnAvatar, wrongScript } from "@/lib/avatar";
 
@@ -17,12 +18,25 @@ export function ChatScreen() {
   const [inputText, setInputText] = useState("");
   const [alert, setAlert] = useState<Alert>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  // الرسالة اللي يأشّرها الأفاتار الحين، والحرف/الكلمة الحالية تتلون بنفس اللحظة
+  const [active, setActive] = useState<number | null>(null);
+  const [live, setLive] = useState<SpellState | null>(null);
+
+  useEffect(() => {
+    const onState = (e: Event) => {
+      const st = (e as CustomEvent<SpellState>).detail;
+      setLive(st.status === "idle" ? null : st);
+    };
+    window.addEventListener("spellState", onState);
+    return () => window.removeEventListener("spellState", onState);
+  }, []);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [items]);
 
-  const sign = (text: string, lang: SignLang = signLang) => {
+  const sign = (text: string, lang: SignLang = signLang, index?: number) => {
+    setActive(index ?? null);
     controlSpelling({ cmd: "speed", value: 1 });
     spellOnAvatar(text, lang);
   };
@@ -36,8 +50,8 @@ export function ChatScreen() {
     if (lang !== signLang) setSignLang(lang);
     // رصد استباقي (مكتوب فقط): كلمات تدل على صعوبة
     setAlert(hasStruggleWord(text) ? { kind: "struggle" } : null);
+    sign(text, lang, items.length);
     setItems((list) => [...list, { text, signLang: lang }]);
-    sign(text, lang);
   };
 
   const replaySlower = () => {
@@ -120,10 +134,25 @@ export function ChatScreen() {
                 className="flex max-w-[90%] items-center gap-2 self-end rounded-2xl rounded-se-md grad-purple px-4 py-2.5 shadow-soft"
               >
                 <span dir="auto" className="text-[16px] font-semibold">
-                  {it.text}
+                  {active === i && live?.tokens.length
+                    ? live.tokens.map((tk, k) => (
+                        <span
+                          key={k}
+                          className={
+                            k === live.index
+                              ? "rounded-md bg-white px-0.5 text-primary shadow-glow"
+                              : k < live.index
+                                ? "text-white"
+                                : "text-white/55"
+                          }
+                        >
+                          {tk.ch}
+                        </span>
+                      ))
+                    : it.text}
                 </span>
                 <button
-                  onClick={() => sign(it.text, it.signLang)}
+                  onClick={() => sign(it.text, it.signLang, i)}
                   aria-label={t("t2s.replay")}
                   title={t("t2s.replay")}
                   className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/20 hover:bg-white/30"

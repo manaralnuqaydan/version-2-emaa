@@ -453,7 +453,9 @@ function AvatarModel({ action: currentAction }: { action?: string }) {
         if (k >= 1) spelling.current = null;
       }
       pose.forEach((q, name) => avatar.getObjectByName(name)!.quaternion.copy(q));
-      const shown = i < n ? sp.step[i] : sp.tokens.length;
+      // الحرف يتلون لما توصل اليد لشكله (مو أول ما تبدأ تتحرك له)، عشان الإشارة والكلمة تكون بنفس اللحظة
+      const arriving = i < n && !sp.linear[i] && u < TRANSITION * 0.6;
+      const shown = i >= n ? sp.tokens.length : arriving && i > 0 ? sp.step[i - 1] : sp.step[i];
       if (shown !== sp.shown) {
         // الشاشة تعرض الحرف اللي يأشّره الأفاتار الحين
         sp.shown = shown;

@@ -1,0 +1,41 @@
+{
+ "svm": {
+  "name": "Landmarks + SVM (RBF)",
+  "accuracy": 0.9967159277504105,
+  "precision_macro": 0.9970238095238095,
+  "recall_macro": 0.9968238283455674,
+  "f1_macro": 0.9968560275833902,
+  "top3_accuracy": 0.9983579638752053,
+  "latency_ms": 0.1575171947479248,
+  "size_mb": 0.419357,
+  "params": 35154,
+  "train_time_min": 0.005363186200459798,
+  "test_images": 609
+ },
+ "rf": {
+  "name": "Landmarks + Random Forest",
+  "accuracy": 0.993431855500821,
+  "precision_macro": 0.9897023809523811,
+  "recall_macro": 0.9924531989749381,
+  "f1_macro": 0.9906522905959435,
+  "top3_accuracy": 0.9967159277504105,
+  "latency_ms": 75.15604972839355,
+  "size_mb": 16.628744,
+  "params": 57194,
+  "train_time_min": 0.017033755779266357,
+  "test_images": 609
+ },
+ "mlp": {
+  "name": "Landmarks + MLP (ours)",
+  "accuracy": 0.993431855500821,
+  "precision_macro": 0.9935119047619049,
+  "recall_macro": 0.9937182382834556,
+  "f1_macro": 0.9933839671575855,
+  "top3_accuracy": 0.9983579638752053,
+  "latency_ms": 1.0963916778564453,
+  "size_mb": 0.688873,
+  "params": 54044,
+  "train_time_min": 0.13713372945785524,
+  "test_images": 609
+ }
+}

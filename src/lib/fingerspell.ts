@@ -14,7 +14,7 @@ const FINGERS: [string, number[]][] = [
 // مكان اليد أثناء التهجئة نسبةً لطول الذراع: قدام الصدر جهة اليمين
 const HAND_TARGET = { inward: 0.12, down: 0.42, forward: 0.55 };
 
-export const LETTER_MS = 750;
+export const LETTER_MS = 600;
 
 const v = (p: number[]) => new THREE.Vector3(-p[0], -p[1], -p[2]);
 
